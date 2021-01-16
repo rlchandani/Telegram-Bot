@@ -55,7 +55,7 @@ exports.debug = functions.https.onRequest(async (request, response) => {
 });
 
 // GCP Scheduler: Run everyday at 0900 hours
-exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * *").onRun((context) => {
+exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * 1-5").onRun((context) => {
   functions.logger.info("Scheduled poll trigerred @9AM");
   bot.telegram.sendPoll(
     config.telegram.group_id,
@@ -67,7 +67,7 @@ exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * *").onRun((
 });
 
 // GCP Scheduler: Run everyday at 1600 hours
-exports.fourPMScheduledFunction = functions.pubsub.schedule("0 16 * * *").onRun((context) => {
+exports.fourPMScheduledFunction = functions.pubsub.schedule("0 16 * * 1-5").onRun((context) => {
   functions.logger.info("Scheduled poll trigerred @4PM");
   bot.telegram.sendPoll(
     config.telegram.group_id,

@@ -20,20 +20,41 @@ exports.register = (bot) => {
     );
   });
 
-  bot.help((ctx) => {
+  bot.help(async (ctx) => {
     functions.logger.info("Help");
-    ctx.replyWithHTML(
-      "You can control me by sending these commands:\n\n" +
-        "<b>General</b>\n" +
-        "/about - Get information about this bot and his developer\n" +
-        "/help - Find help\n" +
-        "/start - Start the interaction with this bot\n\n" +
-        "<b>Automated Messages/Polls</b>\n" +
-        "/register - Register this group to get timely messages\n" +
-        "/deregister - Deregister this group from getting timely messages\n\n" +
-        "<b>Poll</b>\n" +
-        "/listpoll - show list of available polls\n"
-    );
+    const commands = await ctx.getMyCommands();
+    const info = commands.reduce((acc, val) => `${acc}/${val.command} - ${val.description}\n`, "");
+    return ctx.reply("You can control me by sending these commands:\n\n" + info);
+  });
+
+  bot.settings(async (ctx) => {
+    await ctx.setMyCommands([
+      {
+        command: "/about",
+        description: "Get information about this bot and his developer",
+      },
+      {
+        command: "/help",
+        description: "Find help",
+      },
+      {
+        command: "/start",
+        description: "Start the interaction with this bot",
+      },
+      {
+        command: "/register",
+        description: "Register this group to get timely messages",
+      },
+      {
+        command: "/deregister",
+        description: "Deregister this group from getting timely messages",
+      },
+      {
+        command: "/listpoll",
+        description: "Show list of available polls",
+      },
+    ]);
+    return ctx.reply("Bot configured");
   });
 
   /* bot.command("quit", (ctx) => {
