@@ -107,7 +107,7 @@ exports.nineAMHolidayScheduledFunction = functions.pubsub.schedule("0 9 * * *").
 // GCP Scheduler: Runs on weekday at 0900 hours
 exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * 1-5").onRun((context) => {
   functions.logger.info("Scheduled poll trigerred @9AM");
-  orchestrator.sendMessageToRegisteredGroups(
+  orchestrator.sendPollToRegisteredGroups(
     bot,
     "Portfolio Movement @9AM?",
     ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
@@ -119,7 +119,7 @@ exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * 1-5").onRun
 // GCP Scheduler: Runs on weekday at 1600 hours
 exports.fourPMScheduledFunction = functions.pubsub.schedule("0 16 * * 1-5").onRun((context) => {
   functions.logger.info("Scheduled poll trigerred @4PM");
-  orchestrator.sendMessageToRegisteredGroups(
+  orchestrator.sendPollToRegisteredGroups(
     bot,
     "Portfolio Movement @4PM?",
     ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
