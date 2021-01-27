@@ -6,6 +6,11 @@
       "$groupId": {
         ".indexOn": ".value"
       }
+    },
+    "poll": {
+      ".indexOn": [
+        "groupId"
+      ]
     }
   }
 }

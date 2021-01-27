@@ -2,6 +2,26 @@
 
 const functions = require("firebase-functions");
 const registeredGroupDao = require("./dao/registeredGroupDao");
+const pollDao = require("./dao/pollDao");
+
+exports.registerPoll = async (groupId, pollInfo, requestedBy, date) => {
+  try {
+    await pollDao.add(groupId, pollInfo, requestedBy, date);
+    functions.logger.info(`Poll registered for groupId: ${groupId}`);
+  } catch (err) {
+    functions.logger.error(`Poll failed to register for groupId: ${groupId}.`, err);
+    throw err;
+  }
+};
+
+exports.getPolls = async (groupId) => {
+  const snapshot = await pollDao.getAll(groupId);
+  if (snapshot !== null) {
+    return snapshot;
+  }
+  functions.logger.info("No poll(s) found");
+  return {};
+};
 
 exports.registerGroup = async (groupId, groupInfo, registeredBy, date) => {
   try {
@@ -55,6 +75,15 @@ exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
   Object.keys(snapshot).forEach((groupId) => {
     if (snapshot[groupId].enabled === true) {
       bot.telegram.sendPoll(groupId, question, options, extra);
+    }
+  });
+};
+
+exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
+  const snapshot = await this.getRegisteredGroups();
+  Object.keys(snapshot).forEach((groupId) => {
+    if (snapshot[groupId].enabled === true) {
+      bot.telegram.sendMessage(groupId, messageTest, extra);
     }
   });
 };
