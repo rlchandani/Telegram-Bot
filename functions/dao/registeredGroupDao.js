@@ -10,7 +10,6 @@ exports.add = async (groupId, groupInfo, requestedBy, date) => {
   groupInfo["requested_by"] = requestedBy;
   groupInfo["created_at"] = snapshot != null ? snapshot.created_at : date;
   groupInfo["updated_at"] = date;
-  console.log(snapshot);
   firebaseRegisteredGroupsRef.child(groupId).set(groupInfo);
 };
 
