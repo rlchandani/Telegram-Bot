@@ -9,6 +9,9 @@ const onAction = require("./helper/bot/action");
 // const onHear = require("./helper/bot/hear");
 const orchestrator = require("./orchestrator");
 const calendar = require("./helper/google/calendar");
+const { create } = require("./helper/robinhood/session");
+const { marketIsOpenToday } = require("./helper/robinhood/market");
+const { is9AM, is4PM } = require("./helper/utils");
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -23,6 +26,15 @@ if (config.telegram.bot_token === undefined) {
 // Check if api_key is defined
 if (config.google.api_key === undefined) {
   throw new TypeError("Google API key must be provided!");
+}
+
+// Check if robinhood credentials is defined
+if (
+  config.robinhood.username === undefined ||
+  config.robinhood.password === undefined ||
+  config.robinhood.api_key === undefined
+) {
+  throw new TypeError("Robinhood credentials must be provided!");
 }
 
 /** **********************************  Telegram Init  ********************************** **/
@@ -112,26 +124,27 @@ exports.usaHolidayScheduledFunction = functions.pubsub
 
 /** *******************************  Portfolio Poll Events Schedulers  ****************************** **/
 
-// GCP Scheduler: Runs on weekday at 0900 hours
-exports.nineAMScheduledFunction = functions.pubsub.schedule("0 9 * * 1-5").onRun((context) => {
-  functions.logger.info("Scheduled poll trigerred @9AM");
-  orchestrator.sendPollToRegisteredGroups(
-    bot,
-    "Portfolio Movement @9AM?",
-    ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-    { is_anonymous: false }
-  );
-  return null;
-});
-
-// GCP Scheduler: Runs on weekday at 1600 hours
-exports.fourPMScheduledFunction = functions.pubsub.schedule("0 16 * * 1-5").onRun((context) => {
-  functions.logger.info("Scheduled poll trigerred @4PM");
-  orchestrator.sendPollToRegisteredGroups(
-    bot,
-    "Portfolio Movement @4PM?",
-    ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-    { is_anonymous: false }
-  );
+// GCP Scheduler: Runs on weekday at 0900 and 1600 hours
+exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 * * 1-5").onRun(async (context) => {
+  functions.logger.info("Scheduled poll trigerred @9AM/4PM");
+  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  if (await marketIsOpenToday(Robinhood)) {
+    if (is9AM("America/Los_Angeles")) {
+      orchestrator.sendPollToRegisteredGroups(
+        bot,
+        "Portfolio Movement @9AM?",
+        ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
+        { is_anonymous: false }
+      );
+    }
+    if (is4PM("America/Los_Angeles")) {
+      orchestrator.sendPollToRegisteredGroups(
+        bot,
+        "Portfolio Movement @4PM?",
+        ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
+        { is_anonymous: false }
+      );
+    }
+  }
   return null;
 });

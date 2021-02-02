@@ -2,6 +2,7 @@
 
 const functions = require("firebase-functions");
 const orchestrator = require("../../orchestrator");
+const { getStockQuote } = require("./bot_orchestration");
 
 /* const { Markup } = require("telegraf");
 
@@ -49,9 +50,17 @@ exports.register = (bot) => {
         command: "/deregister",
         description: "Deregister this group from getting timely messages",
       },
+      /* {
+        command: "/createpoll",
+        description: "Create a new poll",
+      },
       {
         command: "/listpoll",
         description: "Show list of available polls",
+      }, */
+      {
+        command: "/quote",
+        description: "Get stock quote. Eg: Need ticker symbol as parameter",
       },
     ]);
     return ctx.reply("Bot configured");
@@ -68,10 +77,23 @@ exports.register = (bot) => {
     ctx.reply("Made with ❤️, developed by Rohit Lal Chandani");
   });
 
+  bot.command("quote", async (ctx) => {
+    functions.logger.info("Quote");
+    const message = ctx.update.message;
+    const requestedCommand = message.text.split(/(\s+)/).filter((e) => e.trim().length > 0);
+    if (requestedCommand.length == 2) {
+      const symbol = requestedCommand[1];
+      ctx.reply(await getStockQuote(symbol), { parse_mode: "Markdown" });
+    } else {
+      ctx.reply(`Please provide ticker symbol to track\nExample: ${requestedCommand[0]} TSLA`, {
+        parse_mode: "Markdown",
+      });
+    }
+  });
+
   bot.command("register", async (ctx) => {
     functions.logger.info("Register");
     const message = ctx.update.message;
-    functions.logger.info(message);
     const requesterId = message.from.id;
     const requesterName = message.from.first_name;
     if (message.chat.type === "group") {
@@ -130,8 +152,63 @@ exports.register = (bot) => {
     }
   });
 
-  bot.command("listpoll", (ctx) => {
+  bot.command("createpoll", async (ctx) => {
+    functions.logger.info("Create Poll");
+    const message = ctx.update.message;
+    functions.logger.info(message);
+    const requesterId = message.from.id;
+    const requesterName = message.from.first_name;
+    if (message.chat.type === "group") {
+      const groupId = message.chat.id;
+      const pollInfo = {
+        question: "Portfolio Movement @4PM?",
+        options: ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
+      };
+      await orchestrator.registerPoll(groupId, pollInfo, message.from, message.date);
+      ctx.reply(
+        "Request completed, your new poll is ready to schedule.\n" +
+          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        { parse_mode: "Markdown" }
+      );
+    } else {
+      ctx.reply(
+        "Request failed, only groups are allowed to create new polls.\n" +
+          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        { parse_mode: "Markdown" }
+      );
+    }
+  });
+
+  bot.command("listpoll", async (ctx) => {
     functions.logger.info("List Poll");
-    ctx.reply("Still in development");
+    const message = ctx.update.message;
+    functions.logger.info(message);
+    const requesterId = message.from.id;
+    const requesterName = message.from.first_name;
+    if (message.chat.type === "group") {
+      const groupId = message.chat.id;
+      const snapshot = await orchestrator.getPolls(groupId);
+      const replyResponse = [];
+      Object.keys(snapshot).forEach((pollId) => {
+        if (snapshot[pollId].enabled === true) {
+          replyResponse.push(snapshot[pollId].question);
+        }
+      });
+      if (replyResponse.length > 0) {
+        ctx.reply("Your polls:\n\n" + replyResponse.map((element, index) => index + 1 + ". " + element).join("\n"), {
+          parse_mode: "Markdown",
+        });
+      } else {
+        ctx.reply("You don't have any polls yet.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+          parse_mode: "Markdown",
+        });
+      }
+    } else {
+      ctx.reply(
+        "Request failed, only groups are allowed to use polls feature.\n" +
+          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        { parse_mode: "Markdown" }
+      );
+    }
   });
 };
