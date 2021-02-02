@@ -25,8 +25,8 @@ exports.is9AM = (timeZone) => {
 exports.is4PM = (timeZone) => {
   const currentD = this.getTimestamp(timeZone);
   const startHappyHourD = this.getTimestamp(timeZone);
-  startHappyHourD.setHours(9, 0, 0); // 4.00 pm
+  startHappyHourD.setHours(16, 0, 0); // 4.00 pm
   const endHappyHourD = this.getTimestamp(timeZone);
-  endHappyHourD.setHours(9, 1, 0); // 4.01 pm
+  endHappyHourD.setHours(16, 1, 0); // 4.01 pm
   return currentD >= startHappyHourD && currentD < endHappyHourD;
 };
