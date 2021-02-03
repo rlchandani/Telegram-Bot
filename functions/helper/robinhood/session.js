@@ -16,6 +16,7 @@ const login = (username, password, apiKey) => {
       const credentials = {
         token: cachedToken.token,
       };
+      functions.logger.info("Found cached credentials");
       resolve(robinhood(credentials));
     } else {
       const credentials = {

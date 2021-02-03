@@ -3,7 +3,7 @@
 const functions = require("firebase-functions");
 const { create } = require("../robinhood/session");
 const { getQuote } = require("../robinhood/stock");
-const { getDateString } = require("../utils");
+const { nowHour } = require("../utils");
 const {
   registerExpiringMessage,
   checkIfGroupExist,
@@ -85,16 +85,16 @@ exports.commandQuote = async (ctx) => {
   if (requestedCommand.length == 2) {
     const symbol = requestedCommand[1];
     replyMessage = await ctx.reply(await this.getStockQuote(symbol), { parse_mode: "Markdown" });
-    if (message.chat.type === "group") {
-      registerExpiringMessage(getDateString(), message.chat.id, message.message_id);
-      registerExpiringMessage(getDateString(), replyMessage.chat.id, replyMessage.message_id);
-    }
+    /* if (message.chat.type === "group") {
+      registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+      registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    } */
   } else {
     replyMessage = await ctx.reply(`Please provide ticker symbol to track\nExample: ${requestedCommand[0]} TSLA`, {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(getDateString(), message.chat.id, message.message_id);
-    registerExpiringMessage(getDateString(), replyMessage.chat.id, replyMessage.message_id);
+    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 

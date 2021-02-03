@@ -1,5 +1,7 @@
 "use strict";
 
+const moment = require("moment-timezone");
+
 exports.getTimestamp = (timezone = "UTC") => {
   const todayUTC = new Date();
   return new Date(todayUTC.toLocaleString("en-US", { timeZone: timezone }));
@@ -31,11 +33,10 @@ exports.is4PM = (timeZone) => {
   return currentD >= startHappyHourD && currentD < endHappyHourD;
 };
 
-exports.yesterday = (timezone) => {
-  const todayInTimezone = this.getTimestamp(timezone);
-  todayInTimezone.setDate(todayInTimezone.getDate() - 1);
-  const d = todayInTimezone.getDate();
-  const m = todayInTimezone.getMonth() + 1;
-  const y = todayInTimezone.getFullYear();
-  return y + "-" + (m <= 9 ? "0" + m : m) + "-" + (d <= 9 ? "0" + d : d);
+exports.nowHour = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).format("YYYY-MM-DDTHH");
+};
+
+exports.expiringTime = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).subtract(24, "hours").format("YYYY-MM-DDTHH");
 };

@@ -5,7 +5,7 @@ const registeredGroupDao = require("./dao/registeredGroupDao");
 const pollDao = require("./dao/pollDao");
 const expiringMessageDao = require("./dao/expiringMessageDao");
 const calendar = require("./helper/google/calendar");
-const { yesterday } = require("./helper/utils");
+const { expiringTime } = require("./helper/utils");
 
 exports.registerPoll = async (groupId, pollInfo, requestedBy, date) => {
   try {
@@ -114,14 +114,15 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
   });
 };
 
-exports.expireMessagesForYesterday = async (bot) => {
+exports.expireMessages = async (bot) => {
   const deleteMessageRequestList = [];
   const deleteFromTableRequestList = [];
 
-  const date = yesterday();
+  const date = expiringTime();
   const messages = await this.getExpiringMessageForDay(date);
   for (const [groupId, messagesMap] of Object.entries(messages)) {
     Object.values(messagesMap).forEach((messageId) => {
+      functions.logger.info(`Expiring messageId: ${messageId} from groupId: ${groupId}`);
       deleteMessageRequestList.push(bot.telegram.deleteMessage(groupId, messageId));
     });
     deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(date, groupId));

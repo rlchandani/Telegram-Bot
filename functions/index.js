@@ -10,7 +10,7 @@ const onAction = require("./helper/bot/action");
 const orchestrator = require("./orchestrator");
 const { create } = require("./helper/robinhood/session");
 const { marketIsOpenToday } = require("./helper/robinhood/market");
-const { is9AM, is4PM } = require("./helper/utils");
+const { is9AM, is4PM, expiringTime } = require("./helper/utils");
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -56,7 +56,8 @@ exports.index = functions.https.onRequest((request, response) => {
 
 /** **********************************  Debug Endpoint  ********************************** **/
 exports.debug = functions.https.onRequest(async (request, response) => {
-  response.send("Debugging api");
+  orchestrator.expireMessages(bot);
+  response.send("Debugging api: " + expiringTime("America/Los_Angeles"));
 });
 
 /** **********************************  Holiday Events Schedulers  ********************************** **/
@@ -80,7 +81,7 @@ exports.midnighPSTScheduledFunction = functions.pubsub
     orchestrator.usaHoliday(bot, config);
 
     // Expiring messages from yesterday
-    orchestrator.expireMessagesForYesterday(bot);
+    orchestrator.expireMessages(bot);
   });
 
 /** *******************************  Portfolio Poll Events Schedulers  ****************************** **/
