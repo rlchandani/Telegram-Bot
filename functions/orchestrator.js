@@ -3,6 +3,9 @@
 const functions = require("firebase-functions");
 const registeredGroupDao = require("./dao/registeredGroupDao");
 const pollDao = require("./dao/pollDao");
+const expiringMessageDao = require("./dao/expiringMessageDao");
+const calendar = require("./helper/google/calendar");
+const { yesterday } = require("./helper/utils");
 
 exports.registerPoll = async (groupId, pollInfo, requestedBy, date) => {
   try {
@@ -21,6 +24,29 @@ exports.getPolls = async (groupId) => {
   }
   functions.logger.info("No poll(s) found");
   return {};
+};
+
+exports.registerExpiringMessage = async (day, groupId, messageId) => {
+  try {
+    await expiringMessageDao.add(day, groupId, messageId);
+    functions.logger.info(`Message registered for groupId: ${groupId} and day: ${day}`);
+  } catch (err) {
+    functions.logger.error(`Message failed to register for groupId: ${groupId} and day: ${day}`);
+    throw err;
+  }
+};
+
+exports.getExpiringMessageForDay = async (day) => {
+  const snapshot = await expiringMessageDao.getAllForDay(day);
+  if (snapshot !== null) {
+    return snapshot;
+  }
+  functions.logger.info("No expiring message(s) found");
+  return {};
+};
+
+exports.deleteExpiringMessageForGroup = async (day, groupId) => {
+  await expiringMessageDao.delete(day, groupId);
 };
 
 exports.registerGroup = async (groupId, groupInfo, registeredBy, date) => {
@@ -85,5 +111,50 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
     if (snapshot[groupId].enabled === true) {
       bot.telegram.sendMessage(groupId, messageTest, extra);
     }
+  });
+};
+
+exports.expireMessagesForYesterday = async (bot) => {
+  const deleteMessageRequestList = [];
+  const deleteFromTableRequestList = [];
+
+  const date = yesterday();
+  const messages = await this.getExpiringMessageForDay(date);
+  for (const [groupId, messagesMap] of Object.entries(messages)) {
+    Object.values(messagesMap).forEach((messageId) => {
+      deleteMessageRequestList.push(bot.telegram.deleteMessage(groupId, messageId));
+    });
+    deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(date, groupId));
+  }
+
+  Promise.all(deleteMessageRequestList);
+  Promise.all(deleteFromTableRequestList);
+};
+
+exports.usaHoliday = async (bot, config) => {
+  const me = await bot.telegram.getMe();
+  const usaEvents = await calendar.getTodayEventUSA(config.google.api_key);
+  if (usaEvents.length == 0) {
+    functions.logger.info("No USA events found for today");
+  }
+  usaEvents.forEach((event) => {
+    this.sendMessageToRegisteredGroups(
+      bot,
+      "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+    );
+  });
+};
+
+exports.indiaHoliday = async (bot, config) => {
+  const me = await bot.telegram.getMe();
+  const indiaEvents = await calendar.getTodayEventIndia(config.google.api_key);
+  if (indiaEvents.length == 0) {
+    functions.logger.info("No Indian events found for today");
+  }
+  indiaEvents.forEach((event) => {
+    this.sendMessageToRegisteredGroups(
+      bot,
+      "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+    );
   });
 };

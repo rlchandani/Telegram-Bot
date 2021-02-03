@@ -1,8 +1,13 @@
 "use strict";
 
 const functions = require("firebase-functions");
-const orchestrator = require("../../orchestrator");
-const { getStockQuote } = require("./bot_orchestration");
+const {
+  commandQuote,
+  commandRegister,
+  commandDeRegister,
+  commandCreatePoll,
+  commandListPoll,
+} = require("./bot_orchestration");
 
 /* const { Markup } = require("telegraf");
 
@@ -79,136 +84,26 @@ exports.register = (bot) => {
 
   bot.command("quote", async (ctx) => {
     functions.logger.info("Quote");
-    const message = ctx.update.message;
-    const requestedCommand = message.text.split(/(\s+)/).filter((e) => e.trim().length > 0);
-    if (requestedCommand.length == 2) {
-      const symbol = requestedCommand[1];
-      ctx.reply(await getStockQuote(symbol), { parse_mode: "Markdown" });
-    } else {
-      ctx.reply(`Please provide ticker symbol to track\nExample: ${requestedCommand[0]} TSLA`, {
-        parse_mode: "Markdown",
-      });
-    }
+    commandQuote(ctx);
   });
 
   bot.command("register", async (ctx) => {
     functions.logger.info("Register");
-    const message = ctx.update.message;
-    const requesterId = message.from.id;
-    const requesterName = message.from.first_name;
-    if (message.chat.type === "group") {
-      const groupId = message.chat.id;
-      if (await orchestrator.checkIfGroupExist(groupId)) {
-        ctx.reply(
-          "Already Registered, this group will receieve automated polls.\n" +
-            `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-          { parse_mode: "Markdown" }
-        );
-      } else {
-        await orchestrator.registerGroup(groupId, message.chat, message.from, message.date);
-        ctx.reply(
-          "Registered, this group will receieve automated polls.\n" +
-            `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-          { parse_mode: "Markdown" }
-        );
-      }
-    } else {
-      ctx.reply(
-        "Registration failed, only groups are allowed to register.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
-    }
+    commandRegister(ctx);
   });
 
   bot.command("deregister", async (ctx) => {
     functions.logger.info("Exit");
-    const message = ctx.update.message;
-    functions.logger.info(message);
-    const requesterId = message.from.id;
-    const requesterName = message.from.first_name;
-    if (message.chat.type === "group") {
-      const groupId = message.chat.id;
-      if (await orchestrator.checkIfGroupExist(groupId)) {
-        await orchestrator.deRegisteredGroup(groupId);
-        ctx.reply(
-          "Deregistered, this group has been removed from automated polls.\n" +
-            `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-          { parse_mode: "Markdown" }
-        );
-      } else {
-        ctx.reply(
-          "Not Registered, this group was not regsistered to receieve automated polls.\n" +
-            `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-          { parse_mode: "Markdown" }
-        );
-      }
-    } else {
-      ctx.reply(
-        "Deregistered failed, only groups are allowed to deregister.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
-    }
+    commandDeRegister(ctx);
   });
 
   bot.command("createpoll", async (ctx) => {
     functions.logger.info("Create Poll");
-    const message = ctx.update.message;
-    functions.logger.info(message);
-    const requesterId = message.from.id;
-    const requesterName = message.from.first_name;
-    if (message.chat.type === "group") {
-      const groupId = message.chat.id;
-      const pollInfo = {
-        question: "Portfolio Movement @4PM?",
-        options: ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-      };
-      await orchestrator.registerPoll(groupId, pollInfo, message.from, message.date);
-      ctx.reply(
-        "Request completed, your new poll is ready to schedule.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
-    } else {
-      ctx.reply(
-        "Request failed, only groups are allowed to create new polls.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
-    }
+    commandCreatePoll(ctx);
   });
 
   bot.command("listpoll", async (ctx) => {
     functions.logger.info("List Poll");
-    const message = ctx.update.message;
-    functions.logger.info(message);
-    const requesterId = message.from.id;
-    const requesterName = message.from.first_name;
-    if (message.chat.type === "group") {
-      const groupId = message.chat.id;
-      const snapshot = await orchestrator.getPolls(groupId);
-      const replyResponse = [];
-      Object.keys(snapshot).forEach((pollId) => {
-        if (snapshot[pollId].enabled === true) {
-          replyResponse.push(snapshot[pollId].question);
-        }
-      });
-      if (replyResponse.length > 0) {
-        ctx.reply("Your polls:\n\n" + replyResponse.map((element, index) => index + 1 + ". " + element).join("\n"), {
-          parse_mode: "Markdown",
-        });
-      } else {
-        ctx.reply("You don't have any polls yet.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
-          parse_mode: "Markdown",
-        });
-      }
-    } else {
-      ctx.reply(
-        "Request failed, only groups are allowed to use polls feature.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
-    }
+    commandListPoll(ctx);
   });
 };

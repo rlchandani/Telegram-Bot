@@ -8,3 +8,4 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 exports.firebaseRegisteredGroupsRef = admin.database().ref("/registeredGroup/");
 exports.firebasePollsRef = admin.database().ref("/poll/");
+exports.firebaseExpiringMessageRef = admin.database().ref("/expiringMessage/");
