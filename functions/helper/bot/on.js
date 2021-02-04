@@ -47,21 +47,21 @@ exports.register = (bot) => {
     functions.logger.info(ctx.update.poll_answer);
   });
 
-  bot.on(["sticker", "photo", "video"], (ctx) => {
+  bot.on(["sticker", "photo", "video"], async (ctx) => {
     functions.logger.info("elegram Event: On Sticker/Photo/Video");
     functions.logger.info(ctx.update.message);
-    ctx.reply("👍🏻");
+    await ctx.reply("👍🏻");
   }); */
 
   // MessageSubType
-  bot.on("text", (ctx) => {
+  bot.on("text", async (ctx) => {
     functions.logger.info("Telegram Event: On Text");
-    onText(ctx);
+    await onText(ctx);
   });
 
-  bot.on(["new_chat_members"], (ctx) => {
+  bot.on(["new_chat_members"], async (ctx) => {
     functions.logger.info("Telegram Event: On New Member");
     const newMember = ctx.update.message.new_chat_members.map((member) => member["first_name"]);
-    ctx.reply(`Welcome ${newMember.join()} to ${ctx.update.message.chat.title} group!`);
+    await ctx.reply(`Welcome ${newMember.join()} to ${ctx.update.message.chat.title} group!`);
   });
 };

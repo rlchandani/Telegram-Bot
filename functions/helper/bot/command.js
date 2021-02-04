@@ -17,9 +17,9 @@ const keyboard = Markup.inlineKeyboard([
 ]); */
 
 exports.register = (bot) => {
-  bot.start((ctx) => {
+  bot.start(async (ctx) => {
     functions.logger.info("Telegram Event: Start");
-    ctx.reply(
+    await ctx.reply(
       `Welcome ${ctx.update.message.from.first_name},\n\n` +
         "You are now connected to Masala Bot.\n\n" +
         "Use /help to get the list of supported commands."
@@ -30,7 +30,7 @@ exports.register = (bot) => {
     functions.logger.info("Telegram Event: Help");
     const commands = await ctx.getMyCommands();
     const info = commands.reduce((acc, val) => `${acc}/${val.command} - ${val.description}\n`, "");
-    return ctx.reply("You can control me by sending these commands:\n\n" + info);
+    await ctx.reply("You can control me by sending these commands:\n\n" + info);
   });
 
   bot.settings(async (ctx) => {
@@ -68,42 +68,42 @@ exports.register = (bot) => {
         description: "Get stock quote. Eg: Need ticker symbol as parameter",
       },
     ]);
-    return ctx.reply("Bot configured");
+    await ctx.reply("Bot configured");
   });
 
   /* bot.command("quit", (ctx) => {
     functions.logger.info("Telegram Event: Command Quit");
-    ctx.reply("Thank you for using Masala Bot. \nQuitting the group on your request.");
+    await ctx.reply("Thank you for using Masala Bot. \nQuitting the group on your request.");
     ctx.leaveChat();
   }); */
 
-  bot.command("about", (ctx) => {
+  bot.command("about", async (ctx) => {
     functions.logger.info("Telegram Event: Command About");
-    ctx.reply("Made with ❤️, developed by Rohit Lal Chandani");
+    await ctx.reply("Made with ❤️, developed by Rohit Lal Chandani");
   });
 
   bot.command("quote", async (ctx) => {
     functions.logger.info("Telegram Event: Command Quote");
-    commandQuote(ctx);
+    await commandQuote(ctx);
   });
 
   bot.command("register", async (ctx) => {
     functions.logger.info("Telegram Event: Command Register");
-    commandRegister(ctx);
+    await commandRegister(ctx);
   });
 
   bot.command("deregister", async (ctx) => {
     functions.logger.info("Telegram Event: Command Exit");
-    commandDeRegister(ctx);
+    await commandDeRegister(ctx);
   });
 
   bot.command("createpoll", async (ctx) => {
     functions.logger.info("Telegram Event: Command Create Poll");
-    commandCreatePoll(ctx);
+    await commandCreatePoll(ctx);
   });
 
   bot.command("listpoll", async (ctx) => {
     functions.logger.info("Telegram Event: Command List Poll");
-    commandListPoll(ctx);
+    await commandListPoll(ctx);
   });
 };

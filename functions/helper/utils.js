@@ -42,7 +42,7 @@ exports.expiringTime = (timezone = "America/Los_Angeles") => {
 };
 
 exports.extractTickerSymbolsInsideMessageText= (message) => {
-  const re = /\$\w*/g;
+  const re = /\$\w+/g;
   const matches = message.match(re);
   return matches ? [...new Set(matches.map((m) => m.substring(1)))] : [];
 };

@@ -108,7 +108,7 @@ exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
 exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
   const snapshot = await this.getRegisteredGroups();
   Object.keys(snapshot).forEach((groupId) => {
-    if (snapshot[groupId].enabled === true) {
+    if (snapshot[groupId].enabled === true && messageTest) {
       bot.telegram.sendMessage(groupId, messageTest, extra);
     }
   });
