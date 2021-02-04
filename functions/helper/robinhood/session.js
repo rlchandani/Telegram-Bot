@@ -11,7 +11,7 @@ const generateMFAToken = (apiKey) => authenticator.generate(apiKey);
 
 const login = (username, password, apiKey) => {
   return new Promise((resolve, reject) => {
-    if (fs.existsSync(tokenFile)) {
+    if (fs.existsSync(tokenFile) && (Date.now() - fs.statSync(tokenFile).mtime.getTime) / 1000 < 86400) {
       const cachedToken = require(tokenFile);
       const credentials = {
         token: cachedToken.token,
@@ -30,7 +30,7 @@ const login = (username, password, apiKey) => {
               token: Robinhood.auth_token(),
             };
             await fs.promises.writeFile(tokenFile, JSON.stringify(credentialJSON));
-            functions.logger.info("Credentials cached");
+            functions.logger.info("Credentials not found, caching credentials");
             resolve(Robinhood);
           });
         }

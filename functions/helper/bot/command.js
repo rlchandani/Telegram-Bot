@@ -18,7 +18,7 @@ const keyboard = Markup.inlineKeyboard([
 
 exports.register = (bot) => {
   bot.start((ctx) => {
-    functions.logger.info("Start");
+    functions.logger.info("Telegram Event: Start");
     ctx.reply(
       `Welcome ${ctx.update.message.from.first_name},\n\n` +
         "You are now connected to Masala Bot.\n\n" +
@@ -27,7 +27,7 @@ exports.register = (bot) => {
   });
 
   bot.help(async (ctx) => {
-    functions.logger.info("Help");
+    functions.logger.info("Telegram Event: Help");
     const commands = await ctx.getMyCommands();
     const info = commands.reduce((acc, val) => `${acc}/${val.command} - ${val.description}\n`, "");
     return ctx.reply("You can control me by sending these commands:\n\n" + info);
@@ -72,38 +72,38 @@ exports.register = (bot) => {
   });
 
   /* bot.command("quit", (ctx) => {
-    functions.logger.info("Quit");
+    functions.logger.info("Telegram Event: Command Quit");
     ctx.reply("Thank you for using Masala Bot. \nQuitting the group on your request.");
     ctx.leaveChat();
   }); */
 
   bot.command("about", (ctx) => {
-    functions.logger.info("About");
+    functions.logger.info("Telegram Event: Command About");
     ctx.reply("Made with ❤️, developed by Rohit Lal Chandani");
   });
 
   bot.command("quote", async (ctx) => {
-    functions.logger.info("Quote");
+    functions.logger.info("Telegram Event: Command Quote");
     commandQuote(ctx);
   });
 
   bot.command("register", async (ctx) => {
-    functions.logger.info("Register");
+    functions.logger.info("Telegram Event: Command Register");
     commandRegister(ctx);
   });
 
   bot.command("deregister", async (ctx) => {
-    functions.logger.info("Exit");
+    functions.logger.info("Telegram Event: Command Exit");
     commandDeRegister(ctx);
   });
 
   bot.command("createpoll", async (ctx) => {
-    functions.logger.info("Create Poll");
+    functions.logger.info("Telegram Event: Command Create Poll");
     commandCreatePoll(ctx);
   });
 
   bot.command("listpoll", async (ctx) => {
-    functions.logger.info("List Poll");
+    functions.logger.info("Telegram Event: Command List Poll");
     commandListPoll(ctx);
   });
 };

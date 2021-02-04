@@ -40,3 +40,16 @@ exports.nowHour = (timezone = "America/Los_Angeles") => {
 exports.expiringTime = (timezone = "America/Los_Angeles") => {
   return moment().tz(timezone).subtract(24, "hours").format("YYYY-MM-DDTHH");
 };
+
+exports.extractTickerSymbolsInsideMessageText= (message) => {
+  const re = /\$\w*/g;
+  const matches = message.match(re);
+  return matches ? [...new Set(matches.map((m) => m.substring(1)))] : [];
+};
+
+exports.extractTickerSymbolsFromQuoteCommand = (message) => {
+  const re = /(\w+)/g;
+  const matches = message.match(re);
+  matches.shift();
+  return matches;
+};

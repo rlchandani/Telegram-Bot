@@ -49,7 +49,6 @@ bot.catch((err, ctx) => {
 
 // Telegram Webhook Endpoint
 exports.index = functions.https.onRequest((request, response) => {
-  functions.logger.info(request.body.message);
   bot.handleUpdate(request.body, response);
   response.send("Responding to Telegram Webhook");
 });
