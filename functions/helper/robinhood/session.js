@@ -11,7 +11,7 @@ const generateMFAToken = (apiKey) => authenticator.generate(apiKey);
 
 const login = (username, password, apiKey) => {
   return new Promise((resolve, reject) => {
-    if (fs.existsSync(tokenFile) && (Date.now() - fs.statSync(tokenFile).mtime.getTime) / 1000 < 86400) {
+    if (fs.existsSync(tokenFile) && (Date.now() - fs.statSync(tokenFile).mtime.getTime()) / 1000 < 86400) {
       const cachedToken = require(tokenFile);
       const credentials = {
         token: cachedToken.token,
