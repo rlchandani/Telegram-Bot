@@ -16,6 +16,33 @@ exports.marketIsOpenToday = async (Robinhood) => {
   });
 };
 
+exports.getSp500Up = async (Robinhood) => {
+  return new Promise((resolve, reject) => {
+    Robinhood.sp500_up((err, response, body) => {
+      if (err) throw err;
+      resolve(body);
+    });
+  });
+};
+
+exports.getSp500Down = async (Robinhood) => {
+  return new Promise((resolve, reject) => {
+    Robinhood.sp500_down((err, response, body) => {
+      if (err) throw err;
+      resolve(body);
+    });
+  });
+};
+
+exports.getNews = async (Robinhood, symbol) => {
+  return new Promise((resolve, reject) => {
+    Robinhood.news(symbol, (err, response, body) => {
+      if (err) throw err;
+      resolve(body);
+    });
+  });
+};
+
 exports.url = (Robinhood, url) => {
   return new Promise((resolve, reject) => {
     Robinhood.url(url, (err, response, body) => {

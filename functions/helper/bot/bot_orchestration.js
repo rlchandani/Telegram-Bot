@@ -3,6 +3,7 @@
 const functions = require("firebase-functions");
 const { create } = require("../robinhood/session");
 const { getQuote } = require("../robinhood/stock");
+const { getSp500Up, getSp500Down, getNews } = require("../robinhood/market");
 const { nowHour, extractTickerSymbolsInsideMessageText, extractTickerSymbolsFromQuoteCommand } = require("../utils");
 const {
   registerExpiringMessage,
@@ -101,17 +102,106 @@ exports.commandQuote = async (ctx) => {
   }
 };
 
+exports.commandSp500Up = async (ctx) => {
+  const message = ctx.update.message;
+  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  const response = await getSp500Up(Robinhood);
+  if ("results" in response) {
+    const results = response.results;
+    const tickerSymbols = results.map((s) => s.symbol);
+    if (tickerSymbols.length > 0) {
+      const stockListQuote = await this.getStockListQuote(tickerSymbols);
+      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      if (replyMessages.length > 0) {
+        await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+      }
+    }
+  } else {
+    const replyMessage = await ctx.reply(
+      "Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime",
+      {
+        parse_mode: "Markdown",
+      }
+    );
+    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+  }
+};
+
+exports.commandSp500Down = async (ctx) => {
+  const message = ctx.update.message;
+  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  const response = await getSp500Down(Robinhood);
+  if ("results" in response) {
+    const results = response.results;
+    const tickerSymbols = results.map((s) => s.symbol);
+    if (tickerSymbols.length > 0) {
+      const stockListQuote = await this.getStockListQuote(tickerSymbols);
+      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      if (replyMessages.length > 0) {
+        await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+      }
+    }
+  } else {
+    const replyMessage = await ctx.reply(
+      "Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime",
+      {
+        parse_mode: "Markdown",
+      }
+    );
+    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+  }
+};
+
+exports.commandNews = async (ctx) => {
+  const message = ctx.update.message;
+  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
+  if (tickerSymbols.length > 0) {
+    tickerSymbols.forEach(async (tickerSymbol) => {
+      const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+      const response = await getNews(Robinhood, tickerSymbol);
+      if ("results" in response) {
+        const results = response.results;
+        const replyMessages = results.map(
+          (s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`
+        );
+        // const urlButtons = results.map((s, i) => ({ text: i + 1, url: s.url }));
+        if (replyMessages.length > 0) {
+          await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
+            parse_mode: "Markdown",
+            disable_web_page_preview: true,
+            // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
+          });
+        } else {
+          const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
+            parse_mode: "Markdown",
+          });
+          registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+        }
+      }
+    });
+  } else {
+    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
+      parse_mode: "Markdown",
+    });
+    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+  }
+};
+
 exports.onText = async (ctx) => {
   const message = ctx.update.message;
   const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
-    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote, false));
+    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     // replyMessages.forEach((replyMessageText) => {
     //   ctx.reply(replyMessageText, { parse_mode: "Markdown" });
     // });
     if (replyMessages.length > 0) {
-      await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown" });
+      await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
     }
   }
 };

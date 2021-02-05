@@ -3,6 +3,9 @@
 const functions = require("firebase-functions");
 const {
   commandQuote,
+  commandSp500Up,
+  commandSp500Down,
+  commandNews,
   commandRegister,
   commandDeRegister,
   commandCreatePoll,
@@ -67,6 +70,18 @@ exports.register = (bot) => {
         command: "/quote",
         description: "Get stock quote. Eg: Need ticker symbol as parameter",
       },
+      {
+        command: "/news",
+        description: "Get latest news for stock quote. Eg: Need ticker symbol as parameter",
+      },
+      {
+        command: "/up500",
+        description: "Get a list of the top S&P500 movers up for the day",
+      },
+      {
+        command: "/down500",
+        description: "Get a list of the top S&P500 movers down for the day",
+      },
     ]);
     await ctx.reply("Bot configured");
   });
@@ -85,6 +100,21 @@ exports.register = (bot) => {
   bot.command("quote", async (ctx) => {
     functions.logger.info("Telegram Event: Command Quote");
     await commandQuote(ctx);
+  });
+
+  bot.command("up500", async (ctx) => {
+    functions.logger.info("Telegram Event: Command SP500 Up");
+    await commandSp500Up(ctx);
+  });
+
+  bot.command("down500", async (ctx) => {
+    functions.logger.info("Telegram Event: Command SP500 Down");
+    await commandSp500Down(ctx);
+  });
+
+  bot.command("news", async (ctx) => {
+    functions.logger.info("Telegram Event: Command News");
+    await commandNews(ctx);
   });
 
   bot.command("register", async (ctx) => {
