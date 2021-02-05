@@ -80,6 +80,8 @@ exports.commandDeRegister = async (ctx) => {
 
 exports.commandQuote = async (ctx) => {
   const message = ctx.update.message;
+  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
@@ -88,7 +90,6 @@ exports.commandQuote = async (ctx) => {
       if (replyMessageText) {
         const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown" });
         if (message.chat.type === "group") {
-          registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
           registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
@@ -97,13 +98,14 @@ exports.commandQuote = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
     registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandSp500Up = async (ctx) => {
   const message = ctx.update.message;
+  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+
   const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   const response = await getSp500Up(Robinhood);
   if ("results" in response) {
@@ -113,7 +115,13 @@ exports.commandSp500Up = async (ctx) => {
       const stockListQuote = await this.getStockListQuote(tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       if (replyMessages.length > 0) {
-        await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+        const replyMessage = await ctx.reply(replyMessages.join(""), {
+          parse_mode: "Markdown",
+          disable_web_page_preview: true,
+        });
+        if (message.chat.type === "group") {
+          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+        }
       }
     }
   } else {
@@ -123,13 +131,14 @@ exports.commandSp500Up = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
     registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandSp500Down = async (ctx) => {
   const message = ctx.update.message;
+  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+
   const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   const response = await getSp500Down(Robinhood);
   if ("results" in response) {
@@ -139,7 +148,13 @@ exports.commandSp500Down = async (ctx) => {
       const stockListQuote = await this.getStockListQuote(tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       if (replyMessages.length > 0) {
-        await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+        const replyMessage = await ctx.reply(replyMessages.join(""), {
+          parse_mode: "Markdown",
+          disable_web_page_preview: true,
+        });
+        if (message.chat.type === "group") {
+          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+        }
       }
     }
   } else {
@@ -149,13 +164,14 @@ exports.commandSp500Down = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
     registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandNews = async (ctx) => {
   const message = ctx.update.message;
+  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     tickerSymbols.forEach(async (tickerSymbol) => {
@@ -168,16 +184,18 @@ exports.commandNews = async (ctx) => {
         );
         // const urlButtons = results.map((s, i) => ({ text: i + 1, url: s.url }));
         if (replyMessages.length > 0) {
-          await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
+          const replyMessage = await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
             parse_mode: "Markdown",
             disable_web_page_preview: true,
             // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
           });
+          if (message.chat.type === "group") {
+            registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          }
         } else {
           const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
             parse_mode: "Markdown",
           });
-          registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
           registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
@@ -186,7 +204,6 @@ exports.commandNews = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
     registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
@@ -197,9 +214,6 @@ exports.onText = async (ctx) => {
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-    // replyMessages.forEach((replyMessageText) => {
-    //   ctx.reply(replyMessageText, { parse_mode: "Markdown" });
-    // });
     if (replyMessages.length > 0) {
       await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
     }

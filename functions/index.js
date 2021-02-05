@@ -76,6 +76,18 @@ exports.index = functions.https.onRequest(async (request, response) => {
 //   response.send("Debugging api: " + expiringTime("America/Los_Angeles"));
 // });
 
+/** **********************************  Every Hour  ********************************** **/
+// GCP Scheduler: Run everyday at 0000 hours IST
+exports.everyHour = functions.pubsub
+  .schedule("0 * * * *")
+  .timeZone("America/Los_Angeles")
+  .onRun(async (context) => {
+    functions.logger.info("Scheduled event trigerred every hour PST");
+
+    // Expiring messages from yesterday
+    orchestrator.expireMessages(bot);
+  });
+
 /** **********************************  Holiday Events Schedulers  ********************************** **/
 
 // GCP Scheduler: Run everyday at 0000 hours IST
@@ -95,9 +107,6 @@ exports.midnighPSTScheduledFunction = functions.pubsub
     functions.logger.info("Scheduled event trigerred 0000 PST");
     // USA Holidays
     orchestrator.usaHoliday(bot, config);
-
-    // Expiring messages from yesterday
-    orchestrator.expireMessages(bot);
   });
 
 /** *******************************  Portfolio Poll Events Schedulers  ****************************** **/
