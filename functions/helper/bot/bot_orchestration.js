@@ -13,6 +13,7 @@ const {
   getPolls,
   registerPoll,
   registerMentionedTicker,
+  addToWatchlist,
 } = require("../../orchestrator");
 let config = functions.config();
 
@@ -88,6 +89,7 @@ exports.commandQuote = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
+      addToWatchlist("Stonks", stockQuote.symbol);
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     replyMessages.forEach(async (replyMessageText) => {
@@ -219,6 +221,7 @@ exports.onText = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
+      addToWatchlist("Stonks", stockQuote.symbol);
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {

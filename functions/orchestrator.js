@@ -8,6 +8,15 @@ const mentionedTickerDao = require("./dao/mentionedTickerDao");
 const calendar = require("./helper/google/calendar");
 const { expiringTime, currentWeekDays, unixToStringFormat, getPriceMovementIcon } = require("./helper/utils");
 const reporter = require("./helper/reporter");
+const { create } = require("./helper/robinhood/session");
+const { addToWatchlist, getWatchlistByName } = require("./helper/robinhood/watchlist");
+
+let config = functions.config();
+
+// Check if not dev
+if (process.env.FUNCTIONS_EMULATOR) {
+  config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
+}
 
 /** *********************** MentiondTickerDao orchestrator ************************ */
 
@@ -249,4 +258,17 @@ exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) 
     );
   });
   Promise.all(promises);
+};
+
+/** *********************** Watchlist ************************ */
+
+exports.getWatchlistByName = async (name) => {
+  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  const response = await getWatchlistByName(Robinhood, name);
+  console.log(response.map((item) => item.symbol));
+};
+
+exports.addToWatchlist = async (name, symbol) => {
+  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  await addToWatchlist(Robinhood, name, symbol);
 };

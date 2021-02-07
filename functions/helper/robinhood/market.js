@@ -43,9 +43,26 @@ exports.getNews = async (Robinhood, symbol) => {
   });
 };
 
+exports.getHistory = async (Robinhood, symbol) => {
+  return new Promise((resolve, reject) => {
+    Robinhood.historicals(symbol, "month", "year", (err, response, body) => {
+      if (err) throw err;
+      resolve(body);
+    });
+  });
+};
+
 exports.url = (Robinhood, url) => {
   return new Promise((resolve, reject) => {
     Robinhood.url(url, (err, response, body) => {
+      resolve(body);
+    });
+  });
+};
+
+exports.instruments = (Robinhood, symbol) => {
+  return new Promise((resolve, reject) => {
+    Robinhood.instruments(symbol, (err, response, body) => {
       resolve(body);
     });
   });

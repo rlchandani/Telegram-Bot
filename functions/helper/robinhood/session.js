@@ -2,7 +2,7 @@
 
 const functions = require("firebase-functions");
 const fs = require("fs");
-const robinhood = require("robinhood");
+const robinhood = require("../../lib/robinhood");
 const { authenticator } = require("otplib");
 
 const tokenFile = "/tmp/token.json";
