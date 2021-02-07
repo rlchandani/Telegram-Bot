@@ -11,6 +11,13 @@
       ".indexOn": [
         "groupId"
       ]
+    },
+    "mentionedTicker": {
+      "$groupId": {
+        ".indexOn": [
+            "day"
+        ]
+      }
     }
   }
 }

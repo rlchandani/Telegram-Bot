@@ -41,7 +41,7 @@ exports.expiringTime = (timezone = "America/Los_Angeles") => {
   return moment().tz(timezone).subtract(24, "hours").format("YYYY-MM-DDTHH");
 };
 
-exports.extractTickerSymbolsInsideMessageText= (message) => {
+exports.extractTickerSymbolsInsideMessageText = (message) => {
   const re = /\$\w+/g;
   const matches = message.match(re);
   return matches ? [...new Set(matches.map((m) => m.substring(1)))] : [];
@@ -51,5 +51,38 @@ exports.extractTickerSymbolsFromQuoteCommand = (message) => {
   const re = /(\w+)/g;
   const matches = message.match(re);
   matches.shift();
-  return matches;
+  return matches ? [...new Set(matches)] : [];
+};
+
+exports.todayDate = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).startOf("day").unix();
+};
+
+exports.currentUnixTimestamp = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).unix();
+};
+
+exports.unixToStringFormat = (unixTime) => {
+  return moment.unix(unixTime).format("YYYY-MM-DD");
+};
+
+exports.currentWeekDays = (timezone = "America/Los_Angeles") => {
+  const days = [];
+  const currentDate = moment().tz(timezone);
+  const weekStart = currentDate.clone().startOf("isoWeek");
+  // const weekEnd = currentDate.clone().endOf("isoWeek");
+  for (let i = 0; i <= 6; i++) {
+    days.push(moment(weekStart).add(i, "days").unix());
+  }
+  return days;
+};
+
+exports.getPriceMovementIcon = (price) => {
+  if (price < 0) {
+    return "🔻";
+  }
+  if (price > 0) {
+    return "🔺";
+  }
+  return "";
 };

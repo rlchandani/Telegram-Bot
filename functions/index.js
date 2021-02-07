@@ -10,7 +10,7 @@ const onAction = require("./helper/bot/action");
 const orchestrator = require("./orchestrator");
 const { create } = require("./helper/robinhood/session");
 const { marketIsOpenToday } = require("./helper/robinhood/market");
-const { is9AM, is4PM } = require("./helper/utils");
+const { is9AM, is4PM, currentWeekDays } = require("./helper/utils");
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -71,10 +71,11 @@ exports.index = functions.https.onRequest(async (request, response) => {
 });
 
 /** **********************************  Debug Endpoint  ********************************** **/
-// exports.debug = functions.https.onRequest(async (request, response) => {
-//   await orchestrator.expireMessages(bot);
-//   response.send("Debugging api: " + expiringTime("America/Los_Angeles"));
-// });
+exports.debug = functions.https.onRequest(async (request, response) => {
+  // orchestrator.sendReportForTopMentionedByCountToGroups(bot);
+  // orchestrator.sendReportForTopMentionedByPerformanceToGroups(bot);
+  response.send("Debugging API: " + currentWeekDays("America/Los_Angeles"));
+});
 
 /** **********************************  Every Hour  ********************************** **/
 // GCP Scheduler: Run everyday at 0000 hours IST

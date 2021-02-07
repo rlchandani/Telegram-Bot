@@ -12,6 +12,7 @@ const {
   deRegisteredGroup,
   getPolls,
   registerPoll,
+  registerMentionedTicker,
 } = require("../../orchestrator");
 let config = functions.config();
 
@@ -85,6 +86,9 @@ exports.commandQuote = async (ctx) => {
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    stockListQuote.forEach((stockQuote) => {
+      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
+    });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     replyMessages.forEach(async (replyMessageText) => {
       if (replyMessageText) {
@@ -213,6 +217,9 @@ exports.onText = async (ctx) => {
   const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    stockListQuote.forEach((stockQuote) => {
+      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
+    });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
       await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });

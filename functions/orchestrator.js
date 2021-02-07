@@ -4,8 +4,37 @@ const functions = require("firebase-functions");
 const registeredGroupDao = require("./dao/registeredGroupDao");
 const pollDao = require("./dao/pollDao");
 const expiringMessageDao = require("./dao/expiringMessageDao");
+const mentionedTickerDao = require("./dao/mentionedTickerDao");
 const calendar = require("./helper/google/calendar");
-const { expiringTime } = require("./helper/utils");
+const { expiringTime, currentWeekDays, unixToStringFormat, getPriceMovementIcon } = require("./helper/utils");
+const reporter = require("./helper/reporter");
+
+/** *********************** MentiondTickerDao orchestrator ************************ */
+
+exports.registerMentionedTicker = async (groupId, userId, tickerSymbol, tickerPrice) => {
+  try {
+    await mentionedTickerDao.add(groupId, userId, tickerSymbol, tickerPrice);
+    functions.logger.info(`Ticker registered for groupId: ${groupId} by userId: ${userId}`);
+  } catch (err) {
+    functions.logger.error(`Failed to register ticker for groupId: ${groupId} by userId: ${userId}.`, err);
+    throw err;
+  }
+};
+
+exports.getMentionedTickerByDaysForGroup = async (groupId, days) => {
+  try {
+    const snapshot = await mentionedTickerDao.getTickerByDaysForGroup(groupId, days);
+    if (snapshot !== null) {
+      return snapshot;
+    }
+    throw new Error(`No data found for days: ${days}`);
+  } catch (err) {
+    functions.logger.error(`Failed to get data for days: ${days}.`, err);
+    throw err;
+  }
+};
+
+/** *********************** PollDao orchestrator ************************ */
 
 exports.registerPoll = async (groupId, pollInfo, requestedBy, date) => {
   try {
@@ -25,6 +54,8 @@ exports.getPolls = async (groupId) => {
   functions.logger.info("No poll(s) found");
   return {};
 };
+
+/** *********************** ExpiringMessageDao orchestrator ************************ */
 
 exports.registerExpiringMessage = async (day, groupId, messageId) => {
   try {
@@ -48,6 +79,8 @@ exports.getExpiringMessageForDay = async (day) => {
 exports.deleteExpiringMessageForGroup = async (day, groupId) => {
   await expiringMessageDao.delete(day, groupId);
 };
+
+/** *********************** RegisteredGroupDao orchestrator ************************ */
 
 exports.registerGroup = async (groupId, groupInfo, registeredBy, date) => {
   try {
@@ -96,6 +129,8 @@ exports.checkIfGroupExist = async (groupId) => {
   }
 };
 
+/** *********************** Send Message Wrapper ************************ */
+
 exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
   const snapshot = await this.getRegisteredGroups();
   Object.keys(snapshot).forEach((groupId) => {
@@ -114,6 +149,8 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
   });
 };
 
+/** *********************** Expire Message Wrapper ************************ */
+
 exports.expireMessages = async (bot) => {
   const deleteMessageRequestList = [];
   const deleteFromTableRequestList = [];
@@ -131,6 +168,8 @@ exports.expireMessages = async (bot) => {
   Promise.all(deleteMessageRequestList);
   Promise.all(deleteFromTableRequestList);
 };
+
+/** *********************** Send Message on Holidays Wrapper ************************ */
 
 exports.usaHoliday = async (bot, config) => {
   const me = await bot.telegram.getMe();
@@ -158,4 +197,56 @@ exports.indiaHoliday = async (bot, config) => {
       "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
     );
   });
+};
+
+/** *********************** Report Wrapper ************************ */
+
+exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGroupId) => {
+  const promises = [];
+  const headerText = "*Weekly Report:*\nPerformance of top 5 mentioned stocks this week:\n";
+  const groups = await this.getRegisteredGroups();
+  Object.keys(groups).forEach(async (groupId) => {
+    const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(
+      groupId,
+      currentWeekDays("America/Los_Angeles")
+    );
+    const messageText = topMentionedTickersByPerformance.map((item, index) => {
+      return (
+        `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
+        `*First Mentioned:* ${unixToStringFormat(item.day)} ($${item.first_mentioned_price})\n` +
+        `*Current Price:* $${item.last_trade_price}\n` +
+        `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${getPriceMovementIcon(item.pl)}\n`
+      );
+    });
+    promises.push(
+      bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      })
+    );
+  });
+  Promise.all(promises);
+};
+
+exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) => {
+  const promises = [];
+  const headerText = "*Weekly Report:*\nFollowing stocks are being talked about in this week:\n";
+  const groups = await this.getRegisteredGroups();
+  Object.keys(groups).forEach(async (groupId) => {
+    const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(
+      groupId,
+      currentWeekDays("America/Los_Angeles")
+    );
+    const messageText = Object.keys(topMentionedTickerByCount).map((symbol, index) => {
+      const count = topMentionedTickerByCount[symbol];
+      return `${count} - [${symbol}](https://robinhood.com/stocks/${symbol})`;
+    });
+    promises.push(
+      bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      })
+    );
+  });
+  Promise.all(promises);
 };

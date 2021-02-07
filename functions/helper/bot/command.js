@@ -11,6 +11,10 @@ const {
   commandCreatePoll,
   commandListPoll,
 } = require("./bot_orchestration");
+const {
+  sendReportForTopMentionedByCountToGroups,
+  sendReportForTopMentionedByPerformanceToGroups,
+} = require("../../orchestrator");
 
 /* const { Markup } = require("telegraf");
 
@@ -82,6 +86,18 @@ exports.register = (bot) => {
         command: "/down500",
         description: "Get a list of the top S&P500 movers down for the day",
       },
+      // {
+      //   command: "/history",
+      //   description: "Get stock price history",
+      // },
+      // {
+      //   command: "/buy",
+      //   description: "Paper trade: Buy stock. Eg: Need ticker symbol as parameter",
+      // },
+      // {
+      //   command: "/sell",
+      //   description: "Paper trade: Sell stock. Eg: Need ticker symbol as parameter",
+      // },
     ]);
     await ctx.reply("Bot configured");
   });
@@ -102,6 +118,11 @@ exports.register = (bot) => {
     await commandQuote(ctx);
   });
 
+  // bot.command("history", async (ctx) => {
+  //   functions.logger.info("Telegram Event: Command History");
+  //   await commandHistory(ctx);
+  // });
+
   bot.command("up500", async (ctx) => {
     functions.logger.info("Telegram Event: Command SP500 Up");
     await commandSp500Up(ctx);
@@ -116,6 +137,16 @@ exports.register = (bot) => {
     functions.logger.info("Telegram Event: Command News");
     await commandNews(ctx);
   });
+
+  // bot.command("buy", async (ctx) => {
+  //   functions.logger.info("Telegram Event: Command Buy");
+  //   await commandBuy(ctx);
+  // });
+
+  // bot.command("sell", async (ctx) => {
+  //   functions.logger.info("Telegram Event: Command Sell");
+  //   await commandSell(ctx);
+  // });
 
   bot.command("register", async (ctx) => {
     functions.logger.info("Telegram Event: Command Register");
@@ -135,5 +166,12 @@ exports.register = (bot) => {
   bot.command("listpoll", async (ctx) => {
     functions.logger.info("Telegram Event: Command List Poll");
     await commandListPoll(ctx);
+  });
+
+  bot.command("testReport", async (ctx) => {
+    functions.logger.info("Telegram Event: Command Test Report");
+    const message = ctx.update.message;
+    sendReportForTopMentionedByCountToGroups(ctx, message.chat.id);
+    sendReportForTopMentionedByPerformanceToGroups(ctx, message.chat.id);
   });
 };
