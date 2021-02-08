@@ -4,7 +4,8 @@ const functions = require("firebase-functions");
 const { create } = require("../robinhood/session");
 const { getQuote } = require("../robinhood/stock");
 const { getSp500Up, getSp500Down, getNews } = require("../robinhood/market");
-const { nowHour, extractTickerSymbolsInsideMessageText, extractTickerSymbolsFromQuoteCommand } = require("../utils");
+const utils = require("../utils");
+const timeUtil = require("../timeUtil");
 const {
   registerExpiringMessage,
   checkIfGroupExist,
@@ -82,9 +83,9 @@ exports.commandDeRegister = async (ctx) => {
 
 exports.commandQuote = async (ctx) => {
   const message = ctx.update.message;
-  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
+  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
@@ -96,7 +97,7 @@ exports.commandQuote = async (ctx) => {
       if (replyMessageText) {
         const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown" });
         if (message.chat.type === "group") {
-          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
     });
@@ -104,13 +105,13 @@ exports.commandQuote = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandSp500Up = async (ctx) => {
   const message = ctx.update.message;
-  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
   const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   const response = await getSp500Up(Robinhood);
@@ -126,7 +127,7 @@ exports.commandSp500Up = async (ctx) => {
           disable_web_page_preview: true,
         });
         if (message.chat.type === "group") {
-          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
     }
@@ -137,13 +138,13 @@ exports.commandSp500Up = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandSp500Down = async (ctx) => {
   const message = ctx.update.message;
-  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
   const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   const response = await getSp500Down(Robinhood);
@@ -159,7 +160,7 @@ exports.commandSp500Down = async (ctx) => {
           disable_web_page_preview: true,
         });
         if (message.chat.type === "group") {
-          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
     }
@@ -170,15 +171,15 @@ exports.commandSp500Down = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.commandNews = async (ctx) => {
   const message = ctx.update.message;
-  registerExpiringMessage(nowHour(), message.chat.id, message.message_id);
+  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
+  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     tickerSymbols.forEach(async (tickerSymbol) => {
       const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
@@ -196,13 +197,13 @@ exports.commandNews = async (ctx) => {
             // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
           });
           if (message.chat.type === "group") {
-            registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+            registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
           }
         } else {
           const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
             parse_mode: "Markdown",
           });
-          registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
         }
       }
     });
@@ -210,13 +211,13 @@ exports.commandNews = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
   }
 };
 
 exports.onText = async (ctx) => {
   const message = ctx.update.message;
-  const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
+  const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
@@ -243,15 +244,15 @@ const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
 
   const todayDiff = (tradedPrice - previousTradedPrice).toFixed(2);
   const todayPL = ((todayDiff * 100) / previousTradedPrice).toFixed(2);
-  const todayIcon = getPriceMovementIcon(todayPL);
+  const todayIcon = utils.getPriceMovementIcon(todayPL);
 
   const todayAfterHourDiff = (extendedTradedPrice - tradedPrice).toFixed(2);
   const todayAfterHourDiffPL = ((todayAfterHourDiff * 100) / tradedPrice).toFixed(2);
-  const todayAfterHourDiffIcon = getPriceMovementIcon(todayAfterHourDiffPL);
+  const todayAfterHourDiffIcon = utils.getPriceMovementIcon(todayAfterHourDiffPL);
 
   const total = (extendedTradedPrice - extendedPreviousTradedPrice).toFixed(2);
   const totalPL = ((total * 100) / extendedPreviousTradedPrice).toFixed(2);
-  const totalIcon = getPriceMovementIcon(totalPL);
+  const totalIcon = utils.getPriceMovementIcon(totalPL);
 
   const tickerText = hyperlink ? `[${tickerSymbol}](https://robinhood.com/stocks/${tickerSymbol})` : `${tickerSymbol}`;
   return (
@@ -271,16 +272,6 @@ exports.getStockListQuote = async (tickerSymbols) => {
     return stockQuote.filter((s) => s != null);
   }
   return [];
-};
-
-const getPriceMovementIcon = (price) => {
-  if (price < 0) {
-    return "🔻";
-  }
-  if (price > 0) {
-    return "🔺";
-  }
-  return "";
 };
 
 exports.commandCreatePoll = async (ctx) => {

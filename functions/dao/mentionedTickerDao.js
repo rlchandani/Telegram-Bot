@@ -1,17 +1,15 @@
 "use strict";
 
 const functions = require("firebase-functions");
-const { todayDate, currentUnixTimestamp } = require("../helper/utils");
-
 const { firebaseMentionedTickerRef } = require("../helper/dbHelper");
 
-exports.add = async (groupId, userId, symbol, price) => {
+exports.add = async (groupId, userId, day, symbol, price, createdOn) => {
   firebaseMentionedTickerRef.child(groupId).push({
-    day: todayDate(),
+    day: day,
     userId: userId,
     symbol: symbol,
     price: parseFloat(price),
-    createdOn: currentUnixTimestamp(),
+    createdOn: createdOn,
   });
 };
 

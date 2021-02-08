@@ -10,7 +10,7 @@ const onAction = require("./helper/bot/action");
 const orchestrator = require("./orchestrator");
 const { create } = require("./helper/robinhood/session");
 const { marketIsOpenToday } = require("./helper/robinhood/market");
-const { is9AM, is4PM, currentWeekDays } = require("./helper/utils");
+const timeUtil = require("./helper/timeUtil");
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -74,7 +74,7 @@ exports.index = functions.https.onRequest(async (request, response) => {
 exports.debug = functions.https.onRequest(async (request, response) => {
   // orchestrator.sendReportForTopMentionedByCountToGroups(bot);
   // orchestrator.sendReportForTopMentionedByPerformanceToGroups(bot);
-  response.send("Debugging API: " + currentWeekDays("America/Los_Angeles"));
+  response.send("Debugging API");
 });
 
 /** **********************************  Every Hour  ********************************** **/
@@ -117,7 +117,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 *
   functions.logger.info("Scheduled poll trigerred @9AM/4PM");
   const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   if (await marketIsOpenToday(Robinhood)) {
-    if (is9AM("America/Los_Angeles")) {
+    if (timeUtil.is9AM("America/Los_Angeles")) {
       orchestrator.sendPollToRegisteredGroups(
         bot,
         "Portfolio Movement @9AM?",
@@ -125,7 +125,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 *
         { is_anonymous: false }
       );
     }
-    if (is4PM("America/Los_Angeles")) {
+    if (timeUtil.is4PM("America/Los_Angeles")) {
       orchestrator.sendPollToRegisteredGroups(
         bot,
         "Portfolio Movement @4PM?",

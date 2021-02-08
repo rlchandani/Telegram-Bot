@@ -6,10 +6,12 @@ const pollDao = require("./dao/pollDao");
 const expiringMessageDao = require("./dao/expiringMessageDao");
 const mentionedTickerDao = require("./dao/mentionedTickerDao");
 const calendar = require("./helper/google/calendar");
-const { expiringTime, currentWeekDays, unixToStringFormat, getPriceMovementIcon } = require("./helper/utils");
+const utils = require("./helper/utils");
+const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
 const { create } = require("./helper/robinhood/session");
 const { addToWatchlist, getWatchlistByName } = require("./helper/robinhood/watchlist");
+const moment = require("moment-timezone");
 
 let config = functions.config();
 
@@ -22,7 +24,14 @@ if (process.env.FUNCTIONS_EMULATOR) {
 
 exports.registerMentionedTicker = async (groupId, userId, tickerSymbol, tickerPrice) => {
   try {
-    await mentionedTickerDao.add(groupId, userId, tickerSymbol, tickerPrice);
+    await mentionedTickerDao.add(
+      groupId,
+      userId,
+      moment().tz("America/Los_Angeles").startOf("day").unix(),
+      tickerSymbol,
+      tickerPrice,
+      moment().tz("America/Los_Angeles").unix()
+    );
     functions.logger.info(`Ticker registered for groupId: ${groupId} by userId: ${userId}`);
   } catch (err) {
     functions.logger.error(`Failed to register ticker for groupId: ${groupId} by userId: ${userId}.`, err);
@@ -164,7 +173,7 @@ exports.expireMessages = async (bot) => {
   const deleteMessageRequestList = [];
   const deleteFromTableRequestList = [];
 
-  const date = expiringTime();
+  const date = timeUtil.expiringTime();
   const messages = await this.getExpiringMessageForDay(date);
   for (const [groupId, messagesMap] of Object.entries(messages)) {
     Object.values(messagesMap).forEach((messageId) => {
@@ -217,14 +226,14 @@ exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGro
   Object.keys(groups).forEach(async (groupId) => {
     const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(
       groupId,
-      currentWeekDays("America/Los_Angeles")
+      timeUtil.currentWeekDays("America/Los_Angeles")
     );
     const messageText = topMentionedTickersByPerformance.map((item, index) => {
       return (
         `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
-        `*First Mentioned:* ${unixToStringFormat(item.day)} ($${item.first_mentioned_price})\n` +
+        `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
         `*Current Price:* $${item.last_trade_price}\n` +
-        `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${getPriceMovementIcon(item.pl)}\n`
+        `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
       );
     });
     promises.push(
@@ -244,7 +253,7 @@ exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) 
   Object.keys(groups).forEach(async (groupId) => {
     const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(
       groupId,
-      currentWeekDays("America/Los_Angeles")
+      timeUtil.currentWeekDays("America/Los_Angeles")
     );
     const messageText = Object.keys(topMentionedTickerByCount).map((symbol, index) => {
       const count = topMentionedTickerByCount[symbol];

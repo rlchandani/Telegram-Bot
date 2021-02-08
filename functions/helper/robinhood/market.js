@@ -1,12 +1,14 @@
 "use strict";
 
-const { getDateString } = require("../utils");
+const moment = require("moment-timezone");
 
 exports.marketIsOpenToday = async (Robinhood) => {
   return new Promise((resolve, reject) => {
     Robinhood.markets((err, response, body) => {
       if (err) throw err;
-      const urls = body.results.map((market) => market.url + "hours/" + getDateString("America/Los_Angeles"));
+      const urls = body.results.map(
+        (market) => market.url + "hours/" + moment().tz("America/Los_Angeles").format("YYYY-MM-DD")
+      );
       const isMarketOpen = urls.map(async (url) => await this.url(Robinhood, url));
       Promise.all(isMarketOpen).then((values) => {
         const filteredValues = values.filter((v) => v.is_open == true);
