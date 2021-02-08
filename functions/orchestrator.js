@@ -9,16 +9,7 @@ const calendar = require("./helper/google/calendar");
 const utils = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
-const { create } = require("./helper/robinhood/session");
-const { addToWatchlist, getWatchlistByName } = require("./helper/robinhood/watchlist");
 const moment = require("moment-timezone");
-
-let config = functions.config();
-
-// Check if not dev
-if (process.env.FUNCTIONS_EMULATOR) {
-  config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
-}
 
 /** *********************** MentiondTickerDao orchestrator ************************ */
 
@@ -32,7 +23,7 @@ exports.registerMentionedTicker = async (groupId, userId, tickerSymbol, tickerPr
       tickerPrice,
       moment().tz("America/Los_Angeles").unix()
     );
-    functions.logger.info(`Ticker registered for groupId: ${groupId} by userId: ${userId}`);
+    functions.logger.info(`Ticker ${tickerSymbol} registered for groupId: ${groupId} by userId: ${userId}`);
   } catch (err) {
     functions.logger.error(`Failed to register ticker for groupId: ${groupId} by userId: ${userId}.`, err);
     throw err;
@@ -267,17 +258,4 @@ exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) 
     );
   });
   Promise.all(promises);
-};
-
-/** *********************** Watchlist ************************ */
-
-exports.getWatchlistByName = async (name) => {
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  const response = await getWatchlistByName(Robinhood, name);
-  console.log(response.map((item) => item.symbol));
-};
-
-exports.addToWatchlist = async (name, symbol) => {
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  await addToWatchlist(Robinhood, name, symbol);
 };

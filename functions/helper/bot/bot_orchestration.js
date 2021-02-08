@@ -1,11 +1,7 @@
 "use strict";
 
 const functions = require("firebase-functions");
-const { create } = require("../robinhood/session");
-const { getQuote } = require("../robinhood/stock");
-const { getSp500Up, getSp500Down, getNews } = require("../robinhood/market");
-const utils = require("../utils");
-const timeUtil = require("../timeUtil");
+const RobinhoodWrapper = require("../robinhood_wrapper");
 const {
   registerExpiringMessage,
   checkIfGroupExist,
@@ -14,14 +10,21 @@ const {
   getPolls,
   registerPoll,
   registerMentionedTicker,
-  addToWatchlist,
 } = require("../../orchestrator");
+const utils = require("../utils");
+const timeUtil = require("../timeUtil");
 let config = functions.config();
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
   config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
 }
+
+const RobinhoodWrapperClient = new RobinhoodWrapper(
+  config.robinhood.username,
+  config.robinhood.password,
+  config.robinhood.api_key
+);
 
 exports.commandRegister = async (ctx) => {
   const message = ctx.update.message;
@@ -90,7 +93,7 @@ exports.commandQuote = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
-      addToWatchlist("Stonks", stockQuote.symbol);
+      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     replyMessages.forEach(async (replyMessageText) => {
@@ -113,8 +116,7 @@ exports.commandSp500Up = async (ctx) => {
   const message = ctx.update.message;
   registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  const response = await getSp500Up(Robinhood);
+  const response = await RobinhoodWrapperClient.getSp500Up();
   if ("results" in response) {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
@@ -146,8 +148,7 @@ exports.commandSp500Down = async (ctx) => {
   const message = ctx.update.message;
   registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  const response = await getSp500Down(Robinhood);
+  const response = await RobinhoodWrapperClient.getSp500Down();
   if ("results" in response) {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
@@ -182,8 +183,7 @@ exports.commandNews = async (ctx) => {
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     tickerSymbols.forEach(async (tickerSymbol) => {
-      const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-      const response = await getNews(Robinhood, tickerSymbol);
+      const response = await RobinhoodWrapperClient.getNews(tickerSymbol);
       if ("results" in response) {
         const results = response.results;
         const replyMessages = results.map(
@@ -222,7 +222,23 @@ exports.onText = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
-      addToWatchlist("Stonks", stockQuote.symbol);
+      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
+    });
+    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+    if (replyMessages.length > 0) {
+      await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+    }
+  }
+};
+
+exports.onEditedMessage = async (ctx) => {
+  const message = ctx.update.edited_message;
+  const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
+  if (tickerSymbols.length > 0) {
+    const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    stockListQuote.forEach((stockQuote) => {
+      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
+      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
@@ -265,8 +281,7 @@ const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
 };
 
 exports.getStockListQuote = async (tickerSymbols) => {
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  const response = await getQuote(Robinhood, tickerSymbols);
+  const response = await RobinhoodWrapperClient.getQuote(tickerSymbols);
   if ("results" in response) {
     const stockQuote = response.results;
     return stockQuote.filter((s) => s != null);

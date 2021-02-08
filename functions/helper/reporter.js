@@ -1,16 +1,21 @@
 "use strict";
 
 const functions = require("firebase-functions");
-const _ = require("lodash-contrib");
+const RobinhoodWrapper = require("../helper/robinhood_wrapper");
 const orchestrator = require("../orchestrator");
-const { create } = require("../helper/robinhood/session");
-const { getQuote } = require("../helper/robinhood/stock");
+const _ = require("lodash-contrib");
 let config = functions.config();
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
   config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
 }
+
+const RobinhoodWrapperClient = new RobinhoodWrapper(
+  config.robinhood.username,
+  config.robinhood.password,
+  config.robinhood.api_key
+);
 
 exports.getTopMentionedTickersByCount = async (groupId, days) => {
   const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);
@@ -38,7 +43,7 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
         if (!(stockQuote.symbol in responseTickerInfo)) {
           responseTickerInfo[stockQuote.symbol] = {
             symbol: stockQuote.symbol,
-            first_mentioned_price: parseFloat(stockQuote.price),
+            first_mentioned_price: parseFloat(stockQuote.price).toFixed(2),
             day: stockQuote.day,
             first_mentioned_on: stockQuote.createdOn,
           };
@@ -49,9 +54,9 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
   const stockQuotes = await this.getStockListQuote(Object.keys(responseTickerInfo));
   stockQuotes.forEach((stockQuote) => {
     const current = responseTickerInfo[stockQuote.symbol];
-    const pl = stockQuote.last_trade_price - current.first_mentioned_price;
-    const plPercentage = (pl * 100) / current.first_mentioned_price;
-    current["last_trade_price"] = parseFloat(stockQuote.last_trade_price);
+    const pl = parseFloat(stockQuote.last_trade_price - current.first_mentioned_price).toFixed(2);
+    const plPercentage = parseFloat((pl * 100) / current.first_mentioned_price).toFixed(2);
+    current["last_trade_price"] = parseFloat(stockQuote.last_trade_price).toFixed(2);
     current["pl"] = pl;
     current["pl_percentage"] = plPercentage;
   });
@@ -61,8 +66,7 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
 };
 
 exports.getStockListQuote = async (tickerSymbols) => {
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  const response = await getQuote(Robinhood, tickerSymbols);
+  const response = await RobinhoodWrapperClient.getQuote(tickerSymbols);
   if ("results" in response) {
     const stockQuote = response.results;
     return stockQuote.filter((s) => s != null);

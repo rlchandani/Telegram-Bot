@@ -2,7 +2,7 @@
 
 const functions = require("firebase-functions");
 const { Markup } = require("telegraf");
-const { onText } = require("./bot_orchestration");
+const { onText, onEditedMessage } = require("./bot_orchestration");
 const fetch = require("node-fetch").default;
 
 exports.register = (bot) => {
@@ -57,6 +57,11 @@ exports.register = (bot) => {
   bot.on("text", async (ctx) => {
     functions.logger.info("Telegram Event: On Text");
     await onText(ctx);
+  });
+
+  bot.on("edited_message", async (ctx) => {
+    functions.logger.info("Telegram Event: Edited Message");
+    await onEditedMessage(ctx);
   });
 
   bot.on(["new_chat_members"], async (ctx) => {

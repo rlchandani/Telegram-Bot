@@ -8,9 +8,9 @@ const onBot = require("./helper/bot/on");
 const onAction = require("./helper/bot/action");
 // const onHear = require("./helper/bot/hear");
 const orchestrator = require("./orchestrator");
-const { create } = require("./helper/robinhood/session");
-const { marketIsOpenToday } = require("./helper/robinhood/market");
 const timeUtil = require("./helper/timeUtil");
+const utils = require("./helper/Utils");
+const RobinhoodWrapper = require("./helper/robinhood_wrapper");
 
 // Check if not dev
 if (process.env.FUNCTIONS_EMULATOR) {
@@ -115,8 +115,12 @@ exports.midnighPSTScheduledFunction = functions.pubsub
 // GCP Scheduler: Runs on weekday at 0900 and 1600 hours
 exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 * * 1-5").onRun(async (context) => {
   functions.logger.info("Scheduled poll trigerred @9AM/4PM");
-  const Robinhood = await create(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
-  if (await marketIsOpenToday(Robinhood)) {
+  const RobinhoodWrapperClient = new RobinhoodWrapper(
+    config.robinhood.username,
+    config.robinhood.password,
+    config.robinhood.api_key
+  );
+  if (await utils.isMarketOpenToday(RobinhoodWrapperClient)) {
     if (timeUtil.is9AM("America/Los_Angeles")) {
       orchestrator.sendPollToRegisteredGroups(
         bot,
