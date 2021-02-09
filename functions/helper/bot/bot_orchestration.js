@@ -6,6 +6,7 @@ const {
   registerExpiringMessage,
   checkIfGroupExist,
   registerGroup,
+  registerUser,
   deRegisteredGroup,
   getPolls,
   registerPoll,
@@ -39,7 +40,7 @@ exports.commandRegister = async (ctx) => {
         { parse_mode: "Markdown" }
       );
     } else {
-      await registerGroup(groupId, message.chat, message.from, message.date);
+      await registerGroup(groupId, message.chat, message.from.id, message.date, true);
       await ctx.reply(
         "Registered, this group will receieve automated polls.\n" +
           `Requested by [${requesterName}](tg://user?id=${requesterId})`,
@@ -70,7 +71,7 @@ exports.commandDeRegister = async (ctx) => {
       );
     } else {
       await ctx.reply(
-        "Not Registered, this group was not regsistered to receieve automated polls.\n" +
+        "Not Registered, this group is not registered to receive automated polls.\n" +
           `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
@@ -116,7 +117,7 @@ exports.commandSp500Up = async (ctx) => {
   const message = ctx.update.message;
   registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const response = await RobinhoodWrapperClient.getSp500Up();
+  const response = await RobinhoodWrapperClient.getSP500Up();
   if ("results" in response) {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
@@ -148,7 +149,7 @@ exports.commandSp500Down = async (ctx) => {
   const message = ctx.update.message;
   registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
 
-  const response = await RobinhoodWrapperClient.getSp500Down();
+  const response = await RobinhoodWrapperClient.getSP500Down();
   if ("results" in response) {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
@@ -245,6 +246,19 @@ exports.onEditedMessage = async (ctx) => {
       await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
     }
   }
+};
+
+exports.onNewChatMembers = async (ctx) => {
+  const promises = [];
+  const message = ctx.update.message;
+  const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
+  await ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
+    parse_mode: "Markdown",
+  });
+  message.new_chat_members.forEach((member) => {
+    promises.push(registerUser(member.id, member, message.date));
+  });
+  await Promise.all(promises);
 };
 
 const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {

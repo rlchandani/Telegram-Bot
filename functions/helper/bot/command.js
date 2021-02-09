@@ -171,7 +171,7 @@ exports.register = (bot) => {
   bot.command("testReport", async (ctx) => {
     functions.logger.info("Telegram Event: Command Test Report");
     const message = ctx.update.message;
-    sendReportForTopMentionedByCountToGroups(ctx, message.chat.id);
-    sendReportForTopMentionedByPerformanceToGroups(ctx, message.chat.id);
+    await sendReportForTopMentionedByCountToGroups(ctx, message.chat.id);
+    await sendReportForTopMentionedByPerformanceToGroups(ctx, message.chat.id);
   });
 };

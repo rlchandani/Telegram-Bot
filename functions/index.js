@@ -9,7 +9,8 @@ const onAction = require("./helper/bot/action");
 // const onHear = require("./helper/bot/hear");
 const orchestrator = require("./orchestrator");
 const timeUtil = require("./helper/timeUtil");
-const utils = require("./helper/Utils");
+const utils = require("./helper/utils");
+const moment = require("moment-timezone");
 const RobinhoodWrapper = require("./helper/robinhood_wrapper");
 
 // Check if not dev
@@ -39,6 +40,14 @@ if (
 /** **********************************  Telegram Init  ********************************** **/
 // Configure Telegraf bot using access token
 const bot = new Telegraf(config.telegram.bot_token);
+bot.use(async (ctx, next) => {
+  // console.time(`Processing update ${ctx.update.update_id}`);
+  await next(); // runs next middleware
+  const message = ctx.update.message;
+  await orchestrator.registerUser(message.from.id, message.from, message.date);
+  await orchestrator.registerGroup(message.chat.id, message.chat, message.from.id, message.date);
+  // console.timeEnd(`Processing update ${ctx.update.update_id}`);
+});
 
 // Registering commands
 commandBot.register(bot);
@@ -112,8 +121,8 @@ exports.midnighPSTScheduledFunction = functions.pubsub
 
 /** *******************************  Portfolio Poll Events Schedulers  ****************************** **/
 
-// GCP Scheduler: Runs on weekday at 0900 and 1600 hours
-exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 * * 1-5").onRun(async (context) => {
+// GCP Scheduler: Runs on weekday at 0900, 1600 and 1800 hours
+exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,18 * * 1-5").onRun(async (context) => {
   functions.logger.info("Scheduled poll trigerred @9AM/4PM");
   const RobinhoodWrapperClient = new RobinhoodWrapper(
     config.robinhood.username,
@@ -135,6 +144,15 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16 *
         "Portfolio Movement @4PM?",
         ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
         { is_anonymous: false }
+      );
+    }
+    if (timeUtil.is6PM("America/Los_Angeles")) {
+      orchestrator.sendMessageToRegisteredGroups(
+        bot,
+        `Hi Guys,\nPlease share your top 5 movers for today \`${moment().format(
+          "YYYY-MM-DD"
+        )}\` in terms on \`$Dollar$\` value.`,
+        { parse_mode: "Markdown" }
       );
     }
   }

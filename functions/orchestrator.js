@@ -2,6 +2,7 @@
 
 const functions = require("firebase-functions");
 const registeredGroupDao = require("./dao/registeredGroupDao");
+const registeredUserDao = require("./dao/registeredUserDao");
 const pollDao = require("./dao/pollDao");
 const expiringMessageDao = require("./dao/expiringMessageDao");
 const mentionedTickerDao = require("./dao/mentionedTickerDao");
@@ -91,10 +92,11 @@ exports.deleteExpiringMessageForGroup = async (day, groupId) => {
 
 /** *********************** RegisteredGroupDao orchestrator ************************ */
 
-exports.registerGroup = async (groupId, groupInfo, registeredBy, date) => {
+exports.registerGroup = async (groupId, groupInfo, registeredBy, date, enabled) => {
   try {
-    await registeredGroupDao.add(groupId, groupInfo, registeredBy, date);
-    functions.logger.info(`Group registered: ${groupId}`);
+    if (await registeredGroupDao.add(groupId, groupInfo, registeredBy, date, enabled)) {
+      functions.logger.info(`Group registered: ${groupId}`);
+    }
   } catch (err) {
     functions.logger.error(`Group failed to register for Id: ${groupId}.`, err);
     throw err;
@@ -104,7 +106,9 @@ exports.registerGroup = async (groupId, groupInfo, registeredBy, date) => {
 exports.getRegisteredGroups = async () => {
   const snapshot = await registeredGroupDao.getAll();
   if (snapshot !== null) {
-    return snapshot;
+    return Object.keys(snapshot)
+      .filter((groupId) => snapshot[groupId].enabled == true)
+      .map((groupId) => snapshot[groupId]);
   }
   functions.logger.info("No group(s) found");
   return {};
@@ -132,6 +136,56 @@ exports.deRegisteredGroup = async (groupId) => {
 exports.checkIfGroupExist = async (groupId) => {
   try {
     await this.getRegisteredGroupById(groupId);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+/** *********************** RegisteredUserDao orchestrator ************************ */
+
+exports.registerUser = async (userId, userInfo, date) => {
+  try {
+    if (await registeredUserDao.add(userId, userInfo, date)) {
+      functions.logger.info(`User registered: ${userId}`);
+    }
+  } catch (err) {
+    functions.logger.error(`User failed to register for Id: ${userId}.`, err);
+    throw err;
+  }
+};
+
+exports.getRegisteredUsers = async () => {
+  const snapshot = await registeredUserDao.getAll();
+  if (snapshot !== null) {
+    return snapshot;
+  }
+  functions.logger.info("No user(s) found");
+  return {};
+};
+
+exports.getRegisteredUserById = async (userId) => {
+  const snapshot = await registeredUserDao.get(userId);
+  if (snapshot !== null && snapshot.enabled === true) {
+    return snapshot;
+  }
+  functions.logger.info(`No user found with id: ${userId}`);
+  throw new Error(`No user found with id: ${userId}`);
+};
+
+exports.deRegisteredUser = async (userId) => {
+  try {
+    registeredUserDao.disable(userId);
+    functions.logger.log("User deregistered:", userId);
+  } catch (err) {
+    functions.logger.error(`User failed to deregister for Id: ${userId}.`, err);
+    throw err;
+  }
+};
+
+exports.checkIfUserExist = async (userId) => {
+  try {
+    await this.getRegisteredUserById(userId);
     return true;
   } catch (err) {
     return false;
@@ -212,7 +266,6 @@ exports.indiaHoliday = async (bot, config) => {
 
 exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGroupId) => {
   const promises = [];
-  const headerText = "*Weekly Report:*\nPerformance of top 5 mentioned stocks this week:\n";
   const groups = await this.getRegisteredGroups();
   Object.keys(groups).forEach(async (groupId) => {
     const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(
@@ -227,6 +280,9 @@ exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGro
         `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
       );
     });
+    const currentGroup = groups[groupId];
+    const groupName = currentGroup.type == "group" ? currentGroup.title : currentGroup.first_name;
+    const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nPerformance of top 5 mentioned stocks this week:\n`;
     promises.push(
       bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
         parse_mode: "Markdown",
@@ -239,7 +295,6 @@ exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGro
 
 exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) => {
   const promises = [];
-  const headerText = "*Weekly Report:*\nFollowing stocks are being talked about in this week:\n";
   const groups = await this.getRegisteredGroups();
   Object.keys(groups).forEach(async (groupId) => {
     const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(
@@ -250,6 +305,9 @@ exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) 
       const count = topMentionedTickerByCount[symbol];
       return `${count} - [${symbol}](https://robinhood.com/stocks/${symbol})`;
     });
+    const currentGroup = groups[groupId];
+    const groupName = currentGroup.type == "group" ? currentGroup.title : currentGroup.first_name;
+    const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nFollowing stocks are being talked about in this week:\n`;
     promises.push(
       bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
         parse_mode: "Markdown",

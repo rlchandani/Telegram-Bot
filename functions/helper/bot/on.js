@@ -2,7 +2,7 @@
 
 const functions = require("firebase-functions");
 const { Markup } = require("telegraf");
-const { onText, onEditedMessage } = require("./bot_orchestration");
+const { onText, onEditedMessage, onNewChatMembers } = require("./bot_orchestration");
 const fetch = require("node-fetch").default;
 
 exports.register = (bot) => {
@@ -66,7 +66,6 @@ exports.register = (bot) => {
 
   bot.on(["new_chat_members"], async (ctx) => {
     functions.logger.info("Telegram Event: On New Member");
-    const newMember = ctx.update.message.new_chat_members.map((member) => member["first_name"]);
-    await ctx.reply(`Welcome ${newMember.join()} to ${ctx.update.message.chat.title} group!`);
+    await onNewChatMembers(ctx);
   });
 };

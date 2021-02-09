@@ -23,6 +23,10 @@ exports.is4PM = (timezone = "America/Los_Angeles") => {
   return isTimeBetween("16:00", "16:01", moment().tz(timezone).format("HH:mm"));
 };
 
+exports.is6PM = (timezone = "America/Los_Angeles") => {
+  return isTimeBetween("18:00", "18:01", moment().tz(timezone).format("HH:mm"));
+};
+
 exports.nowHour = (timezone = "America/Los_Angeles") => {
   return moment().tz(timezone).format("YYYY-MM-DDTHH");
 };

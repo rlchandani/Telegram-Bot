@@ -8,7 +8,7 @@ module.exports = {
   rules: {
     "quotes": ["error", "double"],
     "object-curly-spacing": ["error", "always"],
-    "max-len": ["error", { code: 120 }],
+    "max-len": ["error", { code: 150 }],
     "indent": ["error", 2],
     "no-invalid-this": [0],
   },

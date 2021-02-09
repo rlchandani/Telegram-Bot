@@ -4,13 +4,26 @@ const functions = require("firebase-functions");
 
 const { firebaseRegisteredGroupsRef } = require("../helper/dbHelper");
 
-exports.add = async (groupId, groupInfo, requestedBy, date) => {
+exports.add = async (groupId, groupInfo, requestedBy, date, enabled) => {
   const snapshot = await this.get(groupId);
-  groupInfo["enabled"] = true;
-  groupInfo["requested_by"] = requestedBy;
-  groupInfo["created_at"] = snapshot != null ? snapshot.created_at : date;
-  groupInfo["updated_at"] = date;
-  firebaseRegisteredGroupsRef.child(groupId).set(groupInfo);
+  if (
+    snapshot == null ||
+    snapshot.title != groupInfo.title ||
+    snapshot.type != groupInfo.type ||
+    snapshot.all_members_are_administrators != groupInfo.all_members_are_administrators
+  ) {
+    groupInfo["enabled"] = false;
+    groupInfo["requested_by"] = requestedBy;
+    groupInfo["created_at"] = snapshot != null ? snapshot.created_at : date;
+    groupInfo["updated_at"] = date;
+    await firebaseRegisteredGroupsRef.child(groupId).set(groupInfo);
+    return true;
+  }
+  if (enabled) {
+    await this.enable(groupId);
+    return true;
+  }
+  return false;
 };
 
 exports.getAll = async () => {
