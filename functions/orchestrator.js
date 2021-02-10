@@ -241,10 +241,7 @@ exports.usaHoliday = async (bot, config) => {
     functions.logger.info("No USA events found for today");
   }
   usaEvents.forEach((event) => {
-    this.sendMessageToRegisteredGroups(
-      bot,
-      "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
-    );
+    this.sendMessageToRegisteredGroups(bot, "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name);
   });
 };
 
@@ -255,10 +252,7 @@ exports.indiaHoliday = async (bot, config) => {
     functions.logger.info("No Indian events found for today");
   }
   indiaEvents.forEach((event) => {
-    this.sendMessageToRegisteredGroups(
-      bot,
-      "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
-    );
+    this.sendMessageToRegisteredGroups(bot, "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name);
   });
 };
 
@@ -267,53 +261,50 @@ exports.indiaHoliday = async (bot, config) => {
 exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGroupId) => {
   const promises = [];
   const groups = await this.getRegisteredGroups();
-  Object.keys(groups).forEach(async (groupId) => {
-    const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(
-      groupId,
-      timeUtil.currentWeekDays("America/Los_Angeles")
-    );
-    const messageText = topMentionedTickersByPerformance.map((item, index) => {
-      return (
-        `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
-        `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
-        `*Current Price:* $${item.last_trade_price}\n` +
-        `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
-      );
-    });
-    const currentGroup = groups[groupId];
-    const groupName = currentGroup.type == "group" ? currentGroup.title : currentGroup.first_name;
-    const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nPerformance of top 5 mentioned stocks this week:\n`;
-    promises.push(
-      bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
-        parse_mode: "Markdown",
-        disable_web_page_preview: true,
-      })
+  groups.forEach(async (group) => promises.push(_sendReportForTopMentionedByPerformanceToGroups(bot, group, overrideGroupId)));
+  await Promise.all(promises);
+};
+
+const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overrideGroupId) => {
+  const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(
+    group.id,
+    timeUtil.currentWeekDays("America/Los_Angeles")
+  );
+  const messageText = topMentionedTickersByPerformance.slice(0, 5).map((item, index) => {
+    return (
+      `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
+      `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
+      `*Current Price:* $${item.last_trade_price}\n` +
+      `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
     );
   });
-  Promise.all(promises);
+  const groupName = group.type == "group" ? group.title : group.first_name;
+  const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nPerformance of top 5 mentioned stocks this week:\n`;
+  return bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
+    parse_mode: "Markdown",
+    disable_web_page_preview: true,
+  });
 };
 
 exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) => {
   const promises = [];
   const groups = await this.getRegisteredGroups();
-  Object.keys(groups).forEach(async (groupId) => {
-    const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(
-      groupId,
-      timeUtil.currentWeekDays("America/Los_Angeles")
-    );
-    const messageText = Object.keys(topMentionedTickerByCount).map((symbol, index) => {
+  groups.forEach(async (group) => promises.push(_sendReportForTopMentionedByCountToGroups(bot, group, overrideGroupId)));
+  await Promise.all(promises);
+};
+
+const _sendReportForTopMentionedByCountToGroups = async (bot, group, overrideGroupId) => {
+  const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(group.id, timeUtil.currentWeekDays("America/Los_Angeles"));
+  const messageText = Object.keys(topMentionedTickerByCount)
+    .slice(0, 5)
+    .map((symbol, index) => {
       const count = topMentionedTickerByCount[symbol];
       return `${count} - [${symbol}](https://robinhood.com/stocks/${symbol})`;
     });
-    const currentGroup = groups[groupId];
-    const groupName = currentGroup.type == "group" ? currentGroup.title : currentGroup.first_name;
-    const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nFollowing stocks are being talked about in this week:\n`;
-    promises.push(
-      bot.telegram.sendMessage(overrideGroupId || groupId, headerText + messageText.join("\n"), {
-        parse_mode: "Markdown",
-        disable_web_page_preview: true,
-      })
-    );
+  const groupName = group.type == "group" ? group.title : group.first_name;
+  const headerText = `*Weekly Report:*\n*Group Name: ${groupName}*\nFollowing stocks are being talked about in this week:\n`;
+  return await bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
+    parse_mode: "Markdown",
+    disable_web_page_preview: true,
   });
-  Promise.all(promises);
 };
