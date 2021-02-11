@@ -21,11 +21,7 @@ if (process.env.FUNCTIONS_EMULATOR) {
   config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
 }
 
-const RobinhoodWrapperClient = new RobinhoodWrapper(
-  config.robinhood.username,
-  config.robinhood.password,
-  config.robinhood.api_key
-);
+const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
 
 exports.commandRegister = async (ctx) => {
   const message = ctx.update.message;
@@ -35,24 +31,19 @@ exports.commandRegister = async (ctx) => {
     const groupId = message.chat.id;
     if (await checkIfGroupExist(groupId)) {
       await ctx.reply(
-        "Already Registered, this group will receieve automated polls.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "Already Registered, this group will receieve automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     } else {
       await registerGroup(groupId, message.chat, message.from.id, message.date, true);
-      await ctx.reply(
-        "Registered, this group will receieve automated polls.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
-      );
+      await ctx.reply("Registered, this group will receieve automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+        parse_mode: "Markdown",
+      });
     }
   } else {
-    await ctx.reply(
-      "Registration failed, only groups are allowed to register.\n" +
-        `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-      { parse_mode: "Markdown" }
-    );
+    await ctx.reply("Registration failed, only groups are allowed to register.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   }
 };
 
@@ -65,21 +56,18 @@ exports.commandDeRegister = async (ctx) => {
     if (await checkIfGroupExist(groupId)) {
       await deRegisteredGroup(groupId);
       await ctx.reply(
-        "Deregistered, this group has been removed from automated polls.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "Deregistered, this group has been removed from automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     } else {
       await ctx.reply(
-        "Not Registered, this group is not registered to receive automated polls.\n" +
-          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "Not Registered, this group is not registered to receive automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     }
   } else {
     await ctx.reply(
-      "Deregistered failed, only groups are allowed to deregister.\n" +
-        `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      "Deregistered failed, only groups are allowed to deregister.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
       { parse_mode: "Markdown" }
     );
   }
@@ -133,12 +121,9 @@ exports.commandSp500Up = async (ctx) => {
       }
     }
   } else {
-    const replyMessage = await ctx.reply(
-      "Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime",
-      {
-        parse_mode: "Markdown",
-      }
-    );
+    const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime", {
+      parse_mode: "Markdown",
+    });
     promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
   await Promise.all(promises);
@@ -167,12 +152,9 @@ exports.commandSp500Down = async (ctx) => {
       }
     }
   } else {
-    const replyMessage = await ctx.reply(
-      "Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime",
-      {
-        parse_mode: "Markdown",
-      }
-    );
+    const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime", {
+      parse_mode: "Markdown",
+    });
     promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
   await Promise.all(promises);
@@ -189,9 +171,7 @@ exports.commandNews = async (ctx) => {
       const response = await RobinhoodWrapperClient.getNews(tickerSymbol);
       if ("results" in response) {
         const results = response.results;
-        const replyMessages = results.map(
-          (s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`
-        );
+        const replyMessages = results.map((s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`);
         // const urlButtons = results.map((s, i) => ({ text: i + 1, url: s.url }));
         if (replyMessages.length > 0) {
           const replyMessage = await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
@@ -259,9 +239,11 @@ exports.onNewChatMembers = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
   const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
-  promises.push(ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
-    parse_mode: "Markdown",
-  }));
+  promises.push(
+    ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
+      parse_mode: "Markdown",
+    })
+  );
   message.new_chat_members.forEach((member) => {
     promises.push(registerUser(member.id, member, message.date));
   });
@@ -271,13 +253,9 @@ exports.onNewChatMembers = async (ctx) => {
 const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
   const tickerSymbol = stockQuote.symbol;
   const tradedPrice = parseFloat(stockQuote.last_trade_price).toFixed(2);
-  const extendedTradedPrice = parseFloat(
-    stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price
-  ).toFixed(2);
+  const extendedTradedPrice = parseFloat(stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price).toFixed(2);
   const previousTradedPrice = parseFloat(stockQuote.previous_close).toFixed(2);
-  const extendedPreviousTradedPrice = parseFloat(
-    stockQuote.adjusted_previous_close || stockQuote.previous_close
-  ).toFixed(2);
+  const extendedPreviousTradedPrice = parseFloat(stockQuote.adjusted_previous_close || stockQuote.previous_close).toFixed(2);
 
   const todayDiff = (tradedPrice - previousTradedPrice).toFixed(2);
   const todayPL = ((todayDiff * 100) / previousTradedPrice).toFixed(2);
@@ -321,15 +299,12 @@ exports.commandCreatePoll = async (ctx) => {
       options: ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
     };
     await registerPoll(groupId, pollInfo, message.from, message.date);
-    await ctx.reply(
-      "Request completed, your new poll is ready to schedule.\n" +
-        `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-      { parse_mode: "Markdown" }
-    );
+    await ctx.reply("Request completed, your new poll is ready to schedule.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   } else {
     await ctx.reply(
-      "Request failed, only groups are allowed to create new polls.\n" +
-        `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      "Request failed, only groups are allowed to create new polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
       { parse_mode: "Markdown" }
     );
   }
@@ -349,24 +324,17 @@ exports.commandListPoll = async (ctx) => {
       }
     });
     if (replyResponse.length > 0) {
-      await ctx.reply(
-        "Your polls:\n\n" + replyResponse.map((element, index) => index + 1 + ". " + element).join("\n"),
-        {
-          parse_mode: "Markdown",
-        }
-      );
+      await ctx.reply("Your polls:\n\n" + replyResponse.map((element, index) => index + 1 + ". " + element).join("\n"), {
+        parse_mode: "Markdown",
+      });
     } else {
-      await ctx.reply(
-        "You don't have any polls yet.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        {
-          parse_mode: "Markdown",
-        }
-      );
+      await ctx.reply("You don't have any polls yet.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+        parse_mode: "Markdown",
+      });
     }
   } else {
     await ctx.reply(
-      "Request failed, only groups are allowed to use polls feature.\n" +
-        `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      "Request failed, only groups are allowed to use polls feature.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
       { parse_mode: "Markdown" }
     );
   }
