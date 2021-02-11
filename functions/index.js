@@ -40,8 +40,10 @@ bot.use(async (ctx, next) => {
   // console.time(`Processing update ${ctx.update.update_id}`);
   await next(); // runs next middleware
   const message = ctx.update.message;
-  await orchestrator.registerUser(message.from.id, message.from, message.date);
-  await orchestrator.registerGroup(message.chat.id, message.chat, message.from.id, message.date);
+  if (message !== undefined) {
+    await orchestrator.registerUser(message.from.id, message.from, message.date);
+    await orchestrator.registerGroup(message.chat.id, message.chat, message.from.id, message.date);
+  }
   // console.timeEnd(`Processing update ${ctx.update.update_id}`);
 });
 
