@@ -86,36 +86,37 @@ exports.commandDeRegister = async (ctx) => {
 };
 
 exports.commandQuote = async (ctx) => {
+  const promises = [];
   const message = ctx.update.message;
-  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
+  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id));
 
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
-      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-    replyMessages.forEach(async (replyMessageText) => {
-      if (replyMessageText) {
-        const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown" });
-        if (message.chat.type === "group") {
-          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
-        }
+    if (replyMessages.length > 0) {
+      const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+      if (message.chat.type === "group") {
+        promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
       }
-    });
+    }
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
+  await Promise.all(promises);
 };
 
 exports.commandSp500Up = async (ctx) => {
+  const promises = [];
   const message = ctx.update.message;
-  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
+  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id));
 
   const response = await RobinhoodWrapperClient.getSP500Up();
   if ("results" in response) {
@@ -125,12 +126,9 @@ exports.commandSp500Up = async (ctx) => {
       const stockListQuote = await this.getStockListQuote(tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join(""), {
-          parse_mode: "Markdown",
-          disable_web_page_preview: true,
-        });
+        const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
         if (message.chat.type === "group") {
-          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
         }
       }
     }
@@ -141,13 +139,15 @@ exports.commandSp500Up = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
+  await Promise.all(promises);
 };
 
 exports.commandSp500Down = async (ctx) => {
+  const promises = [];
   const message = ctx.update.message;
-  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
+  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id));
 
   const response = await RobinhoodWrapperClient.getSP500Down();
   if ("results" in response) {
@@ -162,7 +162,7 @@ exports.commandSp500Down = async (ctx) => {
           disable_web_page_preview: true,
         });
         if (message.chat.type === "group") {
-          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
         }
       }
     }
@@ -173,13 +173,15 @@ exports.commandSp500Down = async (ctx) => {
         parse_mode: "Markdown",
       }
     );
-    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
+  await Promise.all(promises);
 };
 
 exports.commandNews = async (ctx) => {
+  const promises = [];
   const message = ctx.update.message;
-  registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id);
+  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id));
 
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
@@ -198,13 +200,13 @@ exports.commandNews = async (ctx) => {
             // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
           });
           if (message.chat.type === "group") {
-            registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+            promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
           }
         } else {
           const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
             parse_mode: "Markdown",
           });
-          registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
         }
       }
     });
@@ -212,49 +214,54 @@ exports.commandNews = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
       parse_mode: "Markdown",
     });
-    registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id);
+    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
   }
+  await Promise.all(promises);
 };
 
 exports.onText = async (ctx) => {
+  const promises = [];
   const message = ctx.update.message;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
-      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
-      await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+      promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
     }
   }
+  await Promise.all(promises);
 };
 
 exports.onEditedMessage = async (ctx) => {
+  const promises = [];
   const message = ctx.update.edited_message;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price);
-      RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol);
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
-      await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+      promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
     }
   }
+  await Promise.all(promises);
 };
 
 exports.onNewChatMembers = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
   const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
-  await ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
+  promises.push(ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
     parse_mode: "Markdown",
-  });
+  }));
   message.new_chat_members.forEach((member) => {
     promises.push(registerUser(member.id, member, message.date));
   });
