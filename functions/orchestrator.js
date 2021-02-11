@@ -196,20 +196,26 @@ exports.checkIfUserExist = async (userId) => {
 
 exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
   const snapshot = await this.getRegisteredGroups();
-  Object.keys(snapshot).forEach((groupId) => {
-    if (snapshot[groupId].enabled === true) {
-      bot.telegram.sendPoll(groupId, question, options, extra);
+  const promises = [];
+  snapshot.forEach((group) => {
+    if (group.enabled === true) {
+      functions.logger.info(`Sending poll to ${group.id}`);
+      promises.push(bot.telegram.sendPoll(group.id, question, options, extra));
     }
   });
+  await Promise.all(promises);
 };
 
 exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
   const snapshot = await this.getRegisteredGroups();
-  Object.keys(snapshot).forEach((groupId) => {
-    if (snapshot[groupId].enabled === true && messageTest) {
-      bot.telegram.sendMessage(groupId, messageTest, extra);
+  const promises = [];
+  snapshot.forEach((group) => {
+    if (group.enabled === true && messageTest) {
+      functions.logger.info(`Sending message to ${group.id}`);
+      promises.push(bot.telegram.sendMessage(group.id, messageTest, extra));
     }
   });
+  await Promise.all(promises);
 };
 
 /** *********************** Expire Message Wrapper ************************ */

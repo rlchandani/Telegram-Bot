@@ -585,7 +585,6 @@ function RobinhoodWebApi(opts, callback) {
             .then(stitch_options_with_details)
             .then(resolve)
       );
-      console.log();
     });
   };
 

@@ -29,11 +29,7 @@ if (config.google.api_key === undefined) {
 }
 
 // Check if robinhood credentials is defined
-if (
-  config.robinhood.username === undefined ||
-  config.robinhood.password === undefined ||
-  config.robinhood.api_key === undefined
-) {
+if (config.robinhood.username === undefined || config.robinhood.password === undefined || config.robinhood.api_key === undefined) {
   throw new TypeError("Robinhood credentials must be provided!");
 }
 
@@ -123,15 +119,13 @@ exports.midnighPSTScheduledFunction = functions.pubsub
 
 // GCP Scheduler: Runs on weekday at 0900, 1600 and 1800 hours
 exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,18 * * 1-5").onRun(async (context) => {
-  functions.logger.info("Scheduled poll trigerred @9AM/4PM");
-  const RobinhoodWrapperClient = new RobinhoodWrapper(
-    config.robinhood.username,
-    config.robinhood.password,
-    config.robinhood.api_key
-  );
+  functions.logger.info("Scheduled poll trigerred @9AM/4PM/6PM");
+  const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
   if (await utils.isMarketOpenToday(RobinhoodWrapperClient)) {
+    functions.logger.info("Market is open today");
     if (timeUtil.is9AM("America/Los_Angeles")) {
-      orchestrator.sendPollToRegisteredGroups(
+      functions.logger.info("Sending 9AM poll");
+      await orchestrator.sendPollToRegisteredGroups(
         bot,
         "Portfolio Movement @9AM?",
         ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
@@ -139,7 +133,8 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
       );
     }
     if (timeUtil.is4PM("America/Los_Angeles")) {
-      orchestrator.sendPollToRegisteredGroups(
+      functions.logger.info("Sending 4PM poll");
+      await orchestrator.sendPollToRegisteredGroups(
         bot,
         "Portfolio Movement @4PM?",
         ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
@@ -147,14 +142,14 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
       );
     }
     if (timeUtil.is6PM("America/Los_Angeles")) {
-      orchestrator.sendMessageToRegisteredGroups(
+      functions.logger.info("Sending 6PM poll");
+      await orchestrator.sendMessageToRegisteredGroups(
         bot,
-        `Hi Guys,\nPlease share your top 5 movers for today \`${moment().format(
-          "YYYY-MM-DD"
-        )}\` in terms on \`$Dollar$\` value.`,
+        `*Reminder* to share your top 5 movers for today \`\`\`${moment().format("YYYY-MM-DD")}\`\`\` in terms on \`\`\`$Dollar$\`\`\` value.`,
         { parse_mode: "Markdown" }
       );
     }
+  } else {
+    functions.logger.info("Market is closed today");
   }
-  return null;
 });
