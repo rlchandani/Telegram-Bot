@@ -233,7 +233,7 @@ const _sendPollToRegisteredGroups = async (bot, question, options, extra, group)
     functions.logger.info(`Sending poll to ${group.id}`);
     const replyMessage = await bot.telegram.sendPoll(group.id, question, options, extra);
     try {
-      await this.pinChatMessage(group.id, replyMessage.message_id);
+      await this.pinChatMessage(bot, group.id, replyMessage.message_id);
       await this.registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN);
     } catch (err) {
       console.error(`Failed to pin messageId: ${replyMessage.message_id} to groupId: ${group.id}`, err);
