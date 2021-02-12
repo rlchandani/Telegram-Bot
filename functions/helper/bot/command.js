@@ -10,6 +10,7 @@ const {
   commandDeRegister,
   commandCreatePoll,
   commandListPoll,
+  commandWatch,
 } = require("./bot_orchestration");
 const {
   sendReportForTopMentionedByCountToGroups,
@@ -85,6 +86,10 @@ exports.register = (bot) => {
       {
         command: "/down500",
         description: "Get a list of the top S&P500 movers down for the day",
+      },
+      {
+        command: "/watch",
+        description: "Add to watchlist. Eg: /watch TSLA or /watch to get top 10 by performance",
       },
       // {
       //   command: "/history",
@@ -166,6 +171,11 @@ exports.register = (bot) => {
   bot.command("listpoll", async (ctx) => {
     functions.logger.info("Telegram Event: Command List Poll");
     await commandListPoll(ctx);
+  });
+
+  bot.command("watch", async (ctx) => {
+    functions.logger.info("Telegram Event: Command Watch");
+    await commandWatch(ctx);
   });
 
   bot.command("testReport", async (ctx) => {

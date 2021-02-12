@@ -65,6 +65,37 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
     .value();
 };
 
+exports.getWatchlistTickersByPerformance = async (groupId) => {
+  const responseData = await orchestrator.getWatchlistForGroup(groupId);
+  const responseTickerInfo = {};
+  Object.keys(responseData).forEach((key) => {
+    const stockQuotes = responseData[key];
+    if (Object.keys(stockQuotes).length > 0) {
+      const firstQuote = stockQuotes[Object.keys(stockQuotes)[0]];
+      if (!(firstQuote.symbol in responseTickerInfo)) {
+        responseTickerInfo[firstQuote.symbol] = {
+          symbol: firstQuote.symbol,
+          first_mentioned_price: parseFloat(firstQuote.price).toFixed(2),
+          first_mentioned_on: firstQuote.createdOn,
+        };
+      }
+    }
+  });
+  const stockQuotes = await this.getStockListQuote(Object.keys(responseTickerInfo));
+  stockQuotes.forEach((stockQuote) => {
+    const current = responseTickerInfo[stockQuote.symbol];
+    const pl = parseFloat(stockQuote.last_trade_price - current.first_mentioned_price).toFixed(2);
+    const plPercentage = parseFloat((pl * 100) / current.first_mentioned_price).toFixed(2);
+    const lastTradedPrice = parseFloat(stockQuote.last_trade_price).toFixed(2);
+    current["last_trade_price"] = parseFloat(lastTradedPrice);
+    current["pl"] = parseFloat(pl);
+    current["pl_percentage"] = parseFloat(plPercentage);
+  });
+  return _.chain(responseTickerInfo)
+    .orderBy(["pl_percentage", "pl", "last_trade_price", "symbol"], ["desc", "desc", "desc", "asc"])
+    .value();
+};
+
 exports.getStockListQuote = async (tickerSymbols) => {
   const response = await RobinhoodWrapperClient.getQuote(tickerSymbols);
   if ("results" in response) {

@@ -11,6 +11,8 @@ const {
   getPolls,
   registerPoll,
   registerMentionedTicker,
+  addToWatchlist,
+  sendReportForWatchlistByPerformanceToGroups,
 } = require("../../orchestrator");
 const utils = require("../utils");
 const timeUtil = require("../timeUtil");
@@ -195,6 +197,32 @@ exports.commandNews = async (ctx) => {
       parse_mode: "Markdown",
     });
     promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
+  }
+  await Promise.all(promises);
+};
+
+exports.commandWatch = async (ctx) => {
+  const promises = [];
+  const message = ctx.update.message;
+  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id));
+
+  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
+  if (tickerSymbols.length > 0) {
+    const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    stockListQuote.forEach((stockQuote) => {
+      promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
+      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks Watchlist", stockQuote.symbol));
+    });
+    const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
+    const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
+      parse_mode: "Markdown",
+      disable_web_page_preview: true,
+    });
+    if (message.chat.type === "group") {
+      promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id));
+    }
+  } else {
+    promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
   }
   await Promise.all(promises);
 };

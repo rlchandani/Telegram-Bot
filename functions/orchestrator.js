@@ -6,6 +6,7 @@ const registeredUserDao = require("./dao/registeredUserDao");
 const pollDao = require("./dao/pollDao");
 const expiringMessageDao = require("./dao/expiringMessageDao");
 const mentionedTickerDao = require("./dao/mentionedTickerDao");
+const watchlistDao = require("./dao/watchlistDao");
 const calendar = require("./helper/google/calendar");
 const utils = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
@@ -40,6 +41,31 @@ exports.getMentionedTickerByDaysForGroup = async (groupId, days) => {
     throw new Error(`No data found for days: ${days}`);
   } catch (err) {
     functions.logger.error(`Failed to get data for days: ${days}.`, err);
+    throw err;
+  }
+};
+
+/** *********************** WatchlishDao orchestrator ************************ */
+
+exports.addToWatchlist = async (groupId, tickerSymbol, tickerPrice, userId) => {
+  try {
+    await watchlistDao.add(groupId, tickerSymbol, tickerPrice, userId, moment().tz("America/Los_Angeles").unix());
+    functions.logger.info(`Ticker ${tickerSymbol} added to watchlist for groupId: ${groupId} by userId: ${userId}`);
+  } catch (err) {
+    functions.logger.error(`Failed to add ticker to watchlist for groupId: ${groupId} by userId: ${userId}.`, err);
+    throw err;
+  }
+};
+
+exports.getWatchlistForGroup = async (groupId) => {
+  try {
+    const snapshot = await watchlistDao.getWatchlistForGroup(groupId);
+    if (snapshot !== null) {
+      return snapshot;
+    }
+    return [];
+  } catch (err) {
+    functions.logger.error(`Failed to get data for groupId: ${groupId}.`, err);
     throw err;
   }
 };
@@ -263,6 +289,37 @@ exports.indiaHoliday = async (bot, config) => {
 };
 
 /** *********************** Report Wrapper ************************ */
+
+exports.sendReportForWatchlistByPerformanceToGroups = async (bot, groupId) => {
+  try {
+    const group = await this.getRegisteredGroupById(groupId);
+    const watchlistTickersByPerformance = await reporter.getWatchlistTickersByPerformance(group.id);
+    const messageText = watchlistTickersByPerformance.slice(0, 10).map((item, index) => {
+      return (
+        `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
+        `*Added On:* \`\`\`${moment.unix(item.first_mentioned_on).format("YYYY-MM-DD")}\`\`\` ($${item.first_mentioned_price})\n` +
+        `*Current Price:* \`\`\`$${item.last_trade_price}\`\`\`\n` +
+        `*Total P/L:* \`\`\`$${item.pl}\`\`\` (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
+      );
+    });
+    if (messageText.length > 0) {
+      const groupName = group.type == "group" ? group.title : group.first_name;
+      const headerText = `*Watchlist Status:* ${groupName}\nTop 10 performaning stocks from watchlist:\n\n`;
+      await bot.telegram.sendMessage(group.id, headerText + messageText.join("\n"), {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      });
+    } else {
+      await bot.telegram.sendMessage(groupId, "Watchlist is empty!", {
+        parse_mode: "Markdown",
+      });
+    }
+  } catch (err) {
+    await bot.telegram.sendMessage(groupId, "Group is not registered to receive response.\nPlease register using /register", {
+      parse_mode: "Markdown",
+    });
+  }
+};
 
 exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGroupId) => {
   const promises = [];
