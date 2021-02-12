@@ -85,7 +85,7 @@ exports.debug = functions.https.onRequest(async (request, response) => {
 });
 
 /** **********************************  Every Hour  ********************************** **/
-// GCP Scheduler: Run everyday at 0000 hours IST
+// GCP Scheduler: Run everyday at 0000 hours PST
 exports.everyHour = functions.pubsub
   .schedule("0 * * * *")
   .timeZone("America/Los_Angeles")

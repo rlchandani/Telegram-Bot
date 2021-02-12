@@ -4,8 +4,8 @@ const functions = require("firebase-functions");
 
 const { firebaseExpiringMessageRef } = require("../helper/dbHelper");
 
-exports.add = async (day, groupId, messageId) => {
-  firebaseExpiringMessageRef.child(day).child(groupId).push(messageId);
+exports.add = async (day, groupId, messageId, action) => {
+  firebaseExpiringMessageRef.child(day).child(groupId).push({ messageId, action });
 };
 
 exports.getAllForDay = async (day) => {

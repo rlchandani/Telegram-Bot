@@ -31,8 +31,8 @@ exports.nowHour = (timezone = "America/Los_Angeles") => {
   return moment().tz(timezone).format("YYYY-MM-DDTHH");
 };
 
-exports.expiringTime = (timezone = "America/Los_Angeles") => {
-  return moment().tz(timezone).subtract(24, "hours").format("YYYY-MM-DDTHH");
+exports.expiringTime = (hour = 24, timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).subtract(hour, "hours").format("YYYY-MM-DDTHH");
 };
 
 exports.currentWeekDays = (timezone = "America/Los_Angeles") => {

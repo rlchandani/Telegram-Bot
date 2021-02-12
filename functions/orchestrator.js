@@ -11,6 +11,7 @@ const calendar = require("./helper/google/calendar");
 const utils = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
+const messageAction = require("./model/message_action");
 const moment = require("moment-timezone");
 
 /** *********************** MentiondTickerDao orchestrator ************************ */
@@ -93,9 +94,9 @@ exports.getPolls = async (groupId) => {
 
 /** *********************** ExpiringMessageDao orchestrator ************************ */
 
-exports.registerExpiringMessage = async (day, groupId, messageId) => {
+exports.registerExpiringMessage = async (day, groupId, messageId, action) => {
   try {
-    await expiringMessageDao.add(day, groupId, messageId);
+    await expiringMessageDao.add(day, groupId, messageId, action);
     functions.logger.info(`Message registered for groupId: ${groupId} and day: ${day}`);
   } catch (err) {
     functions.logger.error(`Message failed to register for groupId: ${groupId} and day: ${day}`);
@@ -108,7 +109,7 @@ exports.getExpiringMessageForDay = async (day) => {
   if (snapshot !== null) {
     return snapshot;
   }
-  functions.logger.info("No expiring message(s) found");
+  functions.logger.info(`No expiring message(s) found for day: ${day}`);
   return {};
 };
 
@@ -223,13 +224,21 @@ exports.checkIfUserExist = async (userId) => {
 exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
   const snapshot = await this.getRegisteredGroups();
   const promises = [];
-  snapshot.forEach((group) => {
-    if (group.enabled === true) {
-      functions.logger.info(`Sending poll to ${group.id}`);
-      promises.push(bot.telegram.sendPoll(group.id, question, options, extra));
-    }
-  });
+  snapshot.forEach(async (group) => promises.push(_sendPollToRegisteredGroups(bot, question, options, extra, group)));
   await Promise.all(promises);
+};
+
+const _sendPollToRegisteredGroups = async (bot, question, options, extra, group) => {
+  if (group.enabled === true) {
+    functions.logger.info(`Sending poll to ${group.id}`);
+    const replyMessage = await bot.telegram.sendPoll(group.id, question, options, extra);
+    try {
+      await this.pinChatMessage(group.id, replyMessage.message_id);
+      await this.registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN);
+    } catch (err) {
+      console.error(`Failed to pin messageId: ${replyMessage.message_id} to groupId: ${group.id}`, err);
+    }
+  }
 };
 
 exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
@@ -247,21 +256,68 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
 /** *********************** Expire Message Wrapper ************************ */
 
 exports.expireMessages = async (bot) => {
-  const deleteMessageRequestList = [];
+  const promises = [];
+
+  const expiringHours = [4, 24];
+  expiringHours.forEach(async (hour) => promises.push(_expireMessages(bot, hour)));
+
+  await Promise.all(promises);
+};
+
+const _expireMessages = async (bot, hour) => {
+  const actionRequestList = [];
   const deleteFromTableRequestList = [];
 
-  const date = timeUtil.expiringTime();
+  const date = timeUtil.expiringTime(hour);
   const messages = await this.getExpiringMessageForDay(date);
   for (const [groupId, messagesMap] of Object.entries(messages)) {
-    Object.values(messagesMap).forEach((messageId) => {
-      functions.logger.info(`Expiring messageId: ${messageId} from groupId: ${groupId}`);
-      deleteMessageRequestList.push(bot.telegram.deleteMessage(groupId, messageId));
+    Object.values(messagesMap).forEach((message) => {
+      switch (message.action) {
+      case messageAction.DELETE:
+        if (hour == 24) {
+          functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+          actionRequestList.push(this.deleteMessage(bot, groupId, message.messageId));
+        }
+        break;
+      case messageAction.UNPIN:
+        if (hour == 2) {
+          functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+          actionRequestList.push(this.unpinChatMessage(bot, groupId, message.messageId));
+        }
+        break;
+      default:
+        console.log(`Expiring message action not defined. Action: ${message.action}`);
+      }
     });
     deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(date, groupId));
   }
 
-  Promise.all(deleteMessageRequestList);
-  Promise.all(deleteFromTableRequestList);
+  await Promise.all(actionRequestList);
+  await Promise.all(deleteFromTableRequestList);
+};
+
+exports.deleteMessage = async (bot, groupId, messageId) => {
+  try {
+    await bot.telegram.deleteMessage(groupId, messageId);
+  } catch (err) {
+    console.error(`Failed to delete messageId: ${messageId} from groupId: ${groupId}`, err.message);
+  }
+};
+
+exports.pinChatMessage = async (bot, groupId, messageId) => {
+  try {
+    await bot.telegram.pinChatMessage(groupId, messageId);
+  } catch (err) {
+    console.error(`Failed to pin messageId: ${messageId} from groupId: ${groupId}`, err.message);
+  }
+};
+
+exports.unpinChatMessage = async (bot, groupId, messageId) => {
+  try {
+    await bot.telegram.unpinChatMessage(groupId, messageId);
+  } catch (err) {
+    console.error(`Failed to unpin messageId: ${messageId} from groupId: ${groupId}`, err.message);
+  }
 };
 
 /** *********************** Send Message on Holidays Wrapper ************************ */
