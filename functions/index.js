@@ -147,7 +147,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
       functions.logger.info("Sending 6PM poll");
       await orchestrator.sendMessageToRegisteredGroups(
         bot,
-        `*Reminder* to share your top 5 movers for today \`\`\`${moment().format("YYYY-MM-DD")}\`\`\` in terms on \`\`\`$Dollar$\`\`\` value.`,
+        `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
         { parse_mode: "Markdown" }
       );
     }
