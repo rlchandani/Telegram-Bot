@@ -258,7 +258,7 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
 exports.expireMessages = async (bot) => {
   const promises = [];
 
-  const expiringHours = [4, 24];
+  const expiringHours = [3, 24];
   expiringHours.forEach(async (hour) => promises.push(_expireMessages(bot, hour)));
 
   await Promise.all(promises);
@@ -280,7 +280,7 @@ const _expireMessages = async (bot, hour) => {
         }
         break;
       case messageAction.UNPIN:
-        if (hour == 2) {
+        if (hour == 3) {
           functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
           actionRequestList.push(this.unpinChatMessage(bot, groupId, message.messageId));
         }
