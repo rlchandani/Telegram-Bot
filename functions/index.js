@@ -144,11 +144,11 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
       );
     }
     if (timeUtil.is6PM("America/Los_Angeles")) {
-      functions.logger.info("Sending 6PM poll");
+      functions.logger.info("Sending 6PM reminder message");
       await orchestrator.sendMessageToRegisteredGroups(
         bot,
         `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
-        { parse_mode: "Markdown" }
+        { parse_mode: "Markdown", reply_markup: { force_reply: true } }
       );
     }
   } else {
