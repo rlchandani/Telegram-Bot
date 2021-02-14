@@ -1,6 +1,7 @@
 "use strict";
 
 const functions = require("firebase-functions");
+const { Markup } = require("telegraf");
 const RobinhoodWrapper = require("../robinhood_wrapper");
 const {
   registerExpiringMessage,
@@ -13,10 +14,13 @@ const {
   registerMentionedTicker,
   addToWatchlist,
   sendReportForWatchlistByPerformanceToGroups,
+  getRegisteredGroupServiceStatus,
+  checkIfServiceActiveOnRegisteredGroup,
 } = require("../../orchestrator");
 const utils = require("../utils");
 const timeUtil = require("../timeUtil");
 const messageAction = require("../../model/message_action");
+const { registerOptions } = require("../../model/register_action");
 let config = functions.config();
 
 // Check if not dev
@@ -26,22 +30,43 @@ if (process.env.FUNCTIONS_EMULATOR) {
 
 const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
 
+exports.commandStatus = async (ctx) => {
+  const message = ctx.update.message;
+  const requesterId = message.from.id;
+  const requesterName = message.from.first_name;
+  const groupId = message.chat.id;
+  const serviceStatus = await getRegisteredGroupServiceStatus(groupId);
+  const replyMessage = Object.keys(serviceStatus).map((serviceName) => `${serviceName} - \`\`\`${serviceStatus[serviceName]}\`\`\``);
+  await ctx.reply(
+    "*Service Registration Status:*\n\n" + replyMessage.join("\n") + `\n\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
+    {
+      parse_mode: "Markdown",
+    }
+  );
+};
+
 exports.commandRegister = async (ctx) => {
   const message = ctx.update.message;
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
-  if (message.chat.type === "group") {
-    const groupId = message.chat.id;
-    if (await checkIfGroupExist(groupId)) {
+  const groupId = message.chat.id;
+  const groupType = message.chat.type;
+  if (groupType === "group") {
+    const groupAdmins = await ctx.getChatAdministrators(groupId);
+    const foundGroupAdmins = groupAdmins.filter((admin) => admin.user.id === requesterId);
+    if (foundGroupAdmins.length > 0) {
+      if (!(await checkIfGroupExist(groupId))) {
+        await registerGroup(groupId, message.chat, message.from.id, message.date, true);
+      }
+      const registerOptionKeyboard = Markup.inlineKeyboard(
+        registerOptions.map((optionGroup) => optionGroup.map((option) => Markup.button.callback(option.name, option.action)))
+      );
+      await ctx.reply("Choose from following services:", registerOptionKeyboard);
+    } else {
       await ctx.reply(
-        "Already Registered, this group will receieve automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "🚫 Unauthorized Access: Only group admins are permitted this operation.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
-    } else {
-      await registerGroup(groupId, message.chat, message.from.id, message.date, true);
-      await ctx.reply("Registered, this group will receieve automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
-        parse_mode: "Markdown",
-      });
     }
   } else {
     await ctx.reply("Registration failed, only groups are allowed to register.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
@@ -54,17 +79,23 @@ exports.commandDeRegister = async (ctx) => {
   const message = ctx.update.message;
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
-  if (message.chat.type === "group") {
-    const groupId = message.chat.id;
-    if (await checkIfGroupExist(groupId)) {
+  const groupId = message.chat.id;
+  const groupType = message.chat.type;
+  if (groupType === "group") {
+    const groupAdmins = await ctx.getChatAdministrators(groupId);
+    const foundGroupAdmins = groupAdmins.filter((admin) => admin.user.id === requesterId);
+    if (foundGroupAdmins.length > 0) {
+      if (!(await checkIfGroupExist(groupId))) {
+        await registerGroup(groupId, message.chat, message.from.id, message.date, true);
+      }
       await deRegisteredGroup(groupId);
       await ctx.reply(
-        "Deregistered, this group has been removed from automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "Deregistered, this group has been removed from all registered services.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     } else {
       await ctx.reply(
-        "Not Registered, this group is not registered to receive automated polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "🚫 Unauthorized Access: Only group admins are permitted this operation.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     }
@@ -231,6 +262,7 @@ exports.commandWatch = async (ctx) => {
 exports.onText = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
+  const groupId = message.chat.id;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
@@ -238,9 +270,11 @@ exports.onText = async (ctx) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
       promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
     });
-    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-    if (replyMessages.length > 0) {
-      promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+    if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
+      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      if (replyMessages.length > 0) {
+        promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+      }
     }
   }
   await Promise.all(promises);
@@ -249,6 +283,7 @@ exports.onText = async (ctx) => {
 exports.onEditedMessage = async (ctx) => {
   const promises = [];
   const message = ctx.update.edited_message;
+  const groupId = message.chat.id;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
@@ -256,9 +291,11 @@ exports.onEditedMessage = async (ctx) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
       promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
     });
-    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-    if (replyMessages.length > 0) {
-      promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+    if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
+      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      if (replyMessages.length > 0) {
+        promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+      }
     }
   }
   await Promise.all(promises);
@@ -267,12 +304,15 @@ exports.onEditedMessage = async (ctx) => {
 exports.onNewChatMembers = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
-  promises.push(
-    ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
-      parse_mode: "Markdown",
-    })
-  );
+  const groupId = message.chat.id;
+  if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_welcome_members")) {
+    const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
+    promises.push(
+      ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
+        parse_mode: "Markdown",
+      })
+    );
+  }
   message.new_chat_members.forEach((member) => {
     promises.push(registerUser(member.id, member, message.date));
   });

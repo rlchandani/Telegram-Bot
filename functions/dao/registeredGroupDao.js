@@ -55,8 +55,16 @@ exports.enable = async (groupId) => {
   return firebaseRegisteredGroupsRef.child(groupId).child("enabled").set(true);
 };
 
+exports.enableService = async (groupId, serviceName) => {
+  return firebaseRegisteredGroupsRef.child(groupId).child("service").child(serviceName).set(true);
+};
+
 exports.disable = async (groupId) => {
   return firebaseRegisteredGroupsRef.child(groupId).child("enabled").set(false);
+};
+
+exports.disableService = async (groupId, serviceName) => {
+  return firebaseRegisteredGroupsRef.child(groupId).child("service").child(serviceName).set(false);
 };
 
 exports.delete = async (groupId) => {

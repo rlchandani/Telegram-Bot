@@ -12,6 +12,7 @@ const utils = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
 const messageAction = require("./model/message_action");
+const registerAction = require("./model/register_action");
 const moment = require("moment-timezone");
 
 /** *********************** MentiondTickerDao orchestrator ************************ */
@@ -130,12 +131,21 @@ exports.registerGroup = async (groupId, groupInfo, registeredBy, date, enabled) 
   }
 };
 
-exports.getRegisteredGroups = async () => {
+exports.getRegisteredGroups = async (filterOnService) => {
   const snapshot = await registeredGroupDao.getAll();
   if (snapshot !== null) {
-    return Object.keys(snapshot)
-      .filter((groupId) => snapshot[groupId].enabled == true)
-      .map((groupId) => snapshot[groupId]);
+    if (filterOnService !== undefined) {
+      return Object.keys(snapshot)
+        .filter((groupId) => {
+          const group = snapshot[groupId];
+          return group.service != undefined && group.service[filterOnService] == true;
+        })
+        .map((groupId) => snapshot[groupId]);
+    } else {
+      return Object.keys(snapshot)
+        .filter((groupId) => snapshot[groupId].enabled == true)
+        .map((groupId) => snapshot[groupId]);
+    }
   }
   functions.logger.info("No group(s) found");
   return {};
@@ -151,13 +161,58 @@ exports.getRegisteredGroupById = async (groupId) => {
 };
 
 exports.deRegisteredGroup = async (groupId) => {
+  const promises = [];
+  registerAction.registerOptions.forEach((optionGroup) =>
+    optionGroup.forEach((option) => {
+      promises.push(this.disableService(groupId, option.action));
+    })
+  );
+  await Promise.all(promises);
+};
+
+exports.enableService = async (groupId, serviceName) => {
   try {
-    registeredGroupDao.disable(groupId);
-    functions.logger.log("Group deregistered:", groupId);
+    registeredGroupDao.enableService(groupId, serviceName);
+    functions.logger.log(`Service ${serviceName} enabled on groupId:`, groupId);
   } catch (err) {
-    functions.logger.error(`Group failed to deregister for Id: ${groupId}.`, err);
+    functions.logger.error(`Group failed to enable service: ${serviceName} for Id: ${groupId}.`, err);
     throw err;
   }
+};
+
+exports.disableService = async (groupId, serviceName) => {
+  try {
+    registeredGroupDao.disableService(groupId, serviceName);
+    functions.logger.log(`Service ${serviceName} disabled on groupId:`, groupId);
+  } catch (err) {
+    functions.logger.error(`Group failed to disable service: ${serviceName} for Id: ${groupId}.`, err);
+    throw err;
+  }
+};
+
+exports.getRegisteredGroupServiceStatus = async (groupId) => {
+  const group = await this.getRegisteredGroupById(groupId);
+  const services = group.service;
+  const response = {};
+  registerAction.registerOptions.forEach((optionGroup) =>
+    optionGroup.forEach((option) => {
+      if (services === undefined) {
+        response[option.name] = "Disabled";
+      } else {
+        response[option.name] = services[option.action] === false || services[option.action] === undefined ? "Disabled" : "Enabled";
+      }
+    })
+  );
+  return response;
+};
+
+exports.checkIfServiceActiveOnRegisteredGroup = async (groupId, serviceName) => {
+  const group = await this.getRegisteredGroupById(groupId);
+  const services = group.service;
+  if (services != undefined && services[serviceName] != null && services[serviceName] == true) {
+    return true;
+  }
+  return false;
 };
 
 exports.checkIfGroupExist = async (groupId) => {
@@ -222,7 +277,7 @@ exports.checkIfUserExist = async (userId) => {
 /** *********************** Send Message Wrapper ************************ */
 
 exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
-  const snapshot = await this.getRegisteredGroups();
+  const snapshot = await this.getRegisteredGroups("scheduled_polls");
   const promises = [];
   snapshot.forEach(async (group) => promises.push(_sendPollToRegisteredGroups(bot, question, options, extra, group)));
   await Promise.all(promises);
@@ -242,7 +297,7 @@ const _sendPollToRegisteredGroups = async (bot, question, options, extra, group)
 };
 
 exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
-  const snapshot = await this.getRegisteredGroups();
+  const snapshot = await this.getRegisteredGroups("scheduled_messages");
   const promises = [];
   snapshot.forEach((group) => {
     if (group.enabled === true && messageTest) {
@@ -273,20 +328,20 @@ const _expireMessages = async (bot, hour) => {
   for (const [groupId, messagesMap] of Object.entries(messages)) {
     Object.values(messagesMap).forEach((message) => {
       switch (message.action) {
-      case messageAction.DELETE:
-        if (hour == 24) {
-          functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
-          actionRequestList.push(this.deleteMessage(bot, groupId, message.messageId));
-        }
-        break;
-      case messageAction.UNPIN:
-        if (hour == 3) {
-          functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
-          actionRequestList.push(this.unpinChatMessage(bot, groupId, message.messageId));
-        }
-        break;
-      default:
-        console.log(`Expiring message action not defined. Action: ${message.action}`);
+        case messageAction.DELETE:
+          if (hour == 24) {
+            functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+            actionRequestList.push(this.deleteMessage(bot, groupId, message.messageId));
+          }
+          break;
+        case messageAction.UNPIN:
+          if (hour == 3) {
+            functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+            actionRequestList.push(this.unpinChatMessage(bot, groupId, message.messageId));
+          }
+          break;
+        default:
+          console.log(`Expiring message action not defined. Action: ${message.action}`);
       }
     });
     deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(date, groupId));

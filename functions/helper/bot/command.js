@@ -11,6 +11,7 @@ const {
   commandCreatePoll,
   commandListPoll,
   commandWatch,
+  commandStatus,
 } = require("./bot_orchestration");
 const {
   sendReportForTopMentionedByCountToGroups,
@@ -44,6 +45,10 @@ exports.register = (bot) => {
   bot.settings(async (ctx) => {
     await ctx.setMyCommands([
       {
+        command: "/status",
+        description: "Get current status with available services",
+      },
+      {
         command: "/about",
         description: "Get information about this bot and his developer",
       },
@@ -57,11 +62,11 @@ exports.register = (bot) => {
       },
       {
         command: "/register",
-        description: "Register this group to get timely messages",
+        description: "Register this group to available services",
       },
       {
         command: "/deregister",
-        description: "Deregister this group from getting timely messages",
+        description: "Deregister this group from all registered services",
       },
       /* {
         command: "/createpoll",
@@ -112,6 +117,11 @@ exports.register = (bot) => {
     await ctx.reply("Thank you for using Masala Bot. \nQuitting the group on your request.");
     ctx.leaveChat();
   }); */
+
+  bot.command("status", async (ctx) => {
+    functions.logger.info("Telegram Event: Command Status");
+    await commandStatus(ctx);
+  });
 
   bot.command("about", async (ctx) => {
     functions.logger.info("Telegram Event: Command About");

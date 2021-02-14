@@ -9,7 +9,7 @@ module.exports = {
     "quotes": ["error", "double"],
     "object-curly-spacing": ["error", "always"],
     "max-len": ["error", { code: 150 }],
-    "indent": ["error", 2],
+    "indent": ["error", 2, { "SwitchCase": 1 }],
     "no-invalid-this": [0],
   },
 };
