@@ -81,27 +81,45 @@ exports.index = functions.https.onRequest(async (request, response) => {
 exports.debug = functions.https.onRequest(async (request, response) => {
   // orchestrator.sendReportForTopMentionedByCountToGroups(bot);
   // orchestrator.sendReportForTopMentionedByPerformanceToGroups(bot);
-  response.send("Debugging API");
-});
-
-exports.debugScheduledPoll = functions.https.onRequest(async (request, response) => {
-  await orchestrator.sendPollToRegisteredGroups(
-    bot,
-    "Debug Poll?",
-    ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-    { is_anonymous: false }
-  );
-  response.send("Debugging - Poll sent, will be delivered if group is registered to scheduled poll service");
-});
-
-exports.debugScheduledMessage = functions.https.onRequest(async (request, response) => {
-  await orchestrator.sendMessageToRegisteredGroups(bot, "⏰ Debug Message", { parse_mode: "Markdown", reply_markup: { force_reply: true } });
-  response.send("Debugging - Messaged Sent, will be delivered if group is registered to scheduled poll service");
-});
-
-exports.debugExpireMessages = functions.https.onRequest(async (request, response) => {
-  await orchestrator.expireMessages(bot, 3);
-  response.send("Debugging - Expiring Messages");
+  let msg = "No action provided";
+  const query = request.query;
+  if (query !== undefined) {
+    switch (query.action) {
+      case "scheduledPolls":
+        await orchestrator.sendPollToRegisteredGroups(
+          bot,
+          "Debug Poll?",
+          ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
+          { is_anonymous: false }
+        );
+        msg = "Poll sent, will be delivered if group is registered to scheduled poll service";
+        break;
+      case "scheduledReminders":
+        await orchestrator.sendMessageToRegisteredGroups(
+          bot,
+          "scheduled_reminders",
+          `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
+          { parse_mode: "Markdown", reply_markup: { force_reply: true } }
+        );
+        msg = "Reminder Sent, will be delivered if group is registered to scheduled reminder service";
+        break;
+      case "expireMessages":
+        await orchestrator.expireMessages(bot, 3);
+        msg = "Messages expired";
+        break;
+      case "holidayEventsIndia":
+        msg = "Holiday Events (India) Sent, will be delivered if group is registered to holidaty events (India) service";
+        await orchestrator.indiaHoliday(bot, config);
+        break;
+      case "holidayEventsUSA":
+        msg = "Holiday Events (USA) Sent, will be delivered if group is registered to holidaty events (USA) service";
+        await orchestrator.usaHoliday(bot, config);
+        break;
+      default:
+        msg = "Action not defined";
+    }
+  }
+  response.send(`Debugging API - ${msg}`);
 });
 
 /** **********************************  Every Hour  ********************************** **/
@@ -167,6 +185,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
       functions.logger.info("Sending 6PM reminder message");
       await orchestrator.sendMessageToRegisteredGroups(
         bot,
+        "scheduled_reminders",
         `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
         { parse_mode: "Markdown", reply_markup: { force_reply: true } }
       );

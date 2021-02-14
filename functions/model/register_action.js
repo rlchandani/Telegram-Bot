@@ -6,9 +6,9 @@ exports.registerOptions = [
       description: "Send scheduled polls",
     },
     {
-      action: "scheduled_messages",
-      name: "Scheduled Messages",
-      description: "Send scheduled messages",
+      action: "scheduled_reminders",
+      name: "Scheduled Reminders",
+      description: "Send scheduled reminder",
     },
   ],
   [
@@ -23,11 +23,23 @@ exports.registerOptions = [
       description: "Welcome new member(s) to the group",
     },
   ],
-  //   [
-  //     {
-  //       action: "scheduled_stats",
-  //       name: "Scheduled Stats",
-  //       description: "Send scheduled stats",
-  //     },
-  //   ],
+  [
+    {
+      action: "holiday_events_india",
+      name: "Holiday Events India",
+      description: "Send scheduled holiday events - India",
+    },
+    {
+      action: "holiday_events_usa",
+      name: "Holiday Events USA",
+      description: "Send scheduled holiday events - USA",
+    },
+  ],
+  // [
+  //   {
+  //     action: "scheduled_stats",
+  //     name: "Scheduled Stats",
+  //     description: "Send scheduled stats",
+  //   },
+  // ],
 ];

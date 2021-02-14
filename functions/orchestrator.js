@@ -152,12 +152,12 @@ exports.getRegisteredGroups = async (filterOnService) => {
     }
   }
   functions.logger.info("No group(s) found");
-  return {};
+  return [];
 };
 
 exports.getRegisteredGroupById = async (groupId) => {
   const snapshot = await registeredGroupDao.get(groupId);
-  if (snapshot !== null && snapshot.enabled === true) {
+  if (snapshot !== null) {
     return snapshot;
   }
   functions.logger.info(`No group found with id: ${groupId}`);
@@ -300,11 +300,11 @@ const _sendPollToRegisteredGroups = async (bot, question, options, extra, group)
   }
 };
 
-exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
-  const snapshot = await this.getRegisteredGroups("scheduled_messages");
+exports.sendMessageToRegisteredGroups = async (bot, groupFilter, messageTest, extra) => {
+  const snapshot = await this.getRegisteredGroups(groupFilter);
   const promises = [];
   snapshot.forEach((group) => {
-    if (group.enabled === true && messageTest) {
+    if (messageTest) {
       functions.logger.info(`Sending message to ${group.id}`);
       promises.push(bot.telegram.sendMessage(group.id, messageTest, extra));
     }
@@ -377,7 +377,11 @@ exports.usaHoliday = async (bot, config) => {
     functions.logger.info("No USA events found for today");
   }
   usaEvents.forEach((event) => {
-    this.sendMessageToRegisteredGroups(bot, "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name);
+    this.sendMessageToRegisteredGroups(
+      bot,
+      "holiday_events_usa",
+      "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+    );
   });
 };
 
@@ -388,7 +392,11 @@ exports.indiaHoliday = async (bot, config) => {
     functions.logger.info("No Indian events found for today");
   }
   indiaEvents.forEach((event) => {
-    this.sendMessageToRegisteredGroups(bot, "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name);
+    this.sendMessageToRegisteredGroups(
+      bot,
+      "holiday_events_india",
+      "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+    );
   });
 };
 

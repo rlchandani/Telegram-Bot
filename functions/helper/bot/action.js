@@ -35,29 +35,29 @@ exports.register = (bot) => {
     await ctx.editMessageText("Scheduled Polls Service - Disabled");
   });
 
-  /** *********************** Scheduled Messages ************************ */
+  /** *********************** Scheduled Reminder ************************ */
 
-  bot.action("scheduled_messages", async (ctx) => {
-    functions.logger.info("Telegram Event: Action Scheduled Messages");
+  bot.action("scheduled_reminders", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Scheduled Reminders");
     const responseKeyboard = Markup.inlineKeyboard([
-      Markup.button.callback("Enable", "scheduled_messages_enable"),
-      Markup.button.callback("Disable", "scheduled_messages_disable"),
+      Markup.button.callback("Enable", "scheduled_reminders_enable"),
+      Markup.button.callback("Disable", "scheduled_reminders_disable"),
     ]);
-    await ctx.editMessageText("Action for Scheduled Messages Service:", responseKeyboard);
+    await ctx.editMessageText("Action for Scheduled Reminders Service:", responseKeyboard);
   });
 
-  bot.action("scheduled_messages_enable", async (ctx) => {
-    functions.logger.info("Telegram Event: Action Scheduled Messages Enable");
+  bot.action("scheduled_reminders_enable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Scheduled Reminders Enable");
     const message = ctx.update.callback_query.message;
-    await orchestrator.enableService(message.chat.id, "scheduled_messages");
-    await ctx.editMessageText("Scheduled Messages Service - Enabled");
+    await orchestrator.enableService(message.chat.id, "scheduled_reminders");
+    await ctx.editMessageText("Scheduled Reminders Service - Enabled");
   });
 
-  bot.action("scheduled_messages_disable", async (ctx) => {
-    functions.logger.info("Telegram Event: Action Scheduled Messages Disable");
+  bot.action("scheduled_reminders_disable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Scheduled Reminders Disable");
     const message = ctx.update.callback_query.message;
-    await orchestrator.disableService(message.chat.id, "scheduled_messages");
-    await ctx.editMessageText("Scheduled Messages Service - Disabled");
+    await orchestrator.disableService(message.chat.id, "scheduled_reminders");
+    await ctx.editMessageText("Scheduled Reminders Service - Disabled");
   });
 
   /** *********************** Automated Quotes ************************ */
@@ -108,5 +108,55 @@ exports.register = (bot) => {
     const message = ctx.update.callback_query.message;
     await orchestrator.disableService(message.chat.id, "automated_welcome_members");
     await ctx.editMessageText("Welcome New Member Service - Disabled");
+  });
+
+  /** *********************** Holiday Event India ************************ */
+
+  bot.action("holiday_events_india", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events India");
+    const responseKeyboard = Markup.inlineKeyboard([
+      Markup.button.callback("Enable", "holiday_events_india_enable"),
+      Markup.button.callback("Disable", "holiday_events_india_disable"),
+    ]);
+    await ctx.editMessageText("Action for Holiday Events (India) Service:", responseKeyboard);
+  });
+
+  bot.action("holiday_events_india_enable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events India Enable");
+    const message = ctx.update.callback_query.message;
+    await orchestrator.enableService(message.chat.id, "holiday_events_india");
+    await ctx.editMessageText("Holiday Events (India) Service - Enabled");
+  });
+
+  bot.action("holiday_events_india_disable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events India Disable");
+    const message = ctx.update.callback_query.message;
+    await orchestrator.disableService(message.chat.id, "holiday_events_india");
+    await ctx.editMessageText("Holiday Events (India) Service - Disabled");
+  });
+
+  /** *********************** Holiday Event USA ************************ */
+
+  bot.action("holiday_events_usa", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events USA");
+    const responseKeyboard = Markup.inlineKeyboard([
+      Markup.button.callback("Enable", "holiday_events_usa_enable"),
+      Markup.button.callback("Disable", "holiday_events_usa_disable"),
+    ]);
+    await ctx.editMessageText("Action for Holiday Events (USA) Service:", responseKeyboard);
+  });
+
+  bot.action("holiday_events_usa_enable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events USA Enable");
+    const message = ctx.update.callback_query.message;
+    await orchestrator.enableService(message.chat.id, "holiday_events_usa");
+    await ctx.editMessageText("Holiday Events (USA) Service - Enabled");
+  });
+
+  bot.action("holiday_events_usa_disable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Holiday Events USA Disable");
+    const message = ctx.update.callback_query.message;
+    await orchestrator.disableService(message.chat.id, "holiday_events_usa");
+    await ctx.editMessageText("Holiday Events (USA) Service - Disabled");
   });
 };
