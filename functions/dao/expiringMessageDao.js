@@ -4,13 +4,15 @@ const functions = require("firebase-functions");
 
 const { firebaseExpiringMessageRef } = require("../helper/dbHelper");
 
-exports.add = async (day, groupId, messageId, action) => {
-  firebaseExpiringMessageRef.child(day).child(groupId).push({ messageId, action });
+exports.add = async (groupId, messageId, action, expiringTime) => {
+  firebaseExpiringMessageRef.child(expiringTime).child(groupId).push({ messageId, action });
 };
 
-exports.getAllForDay = async (day) => {
+exports.get = async (expiringTimeStart, expiringTimeEnd) => {
   return firebaseExpiringMessageRef
-    .child(day)
+    .orderByKey()
+    .startAt(expiringTimeStart)
+    .endAt(expiringTimeEnd)
     .once("value")
     .then((data) => {
       return data.val() !== null ? data.val() : null;
@@ -21,6 +23,6 @@ exports.getAllForDay = async (day) => {
     });
 };
 
-exports.delete = async (day, groupId) => {
-  return firebaseExpiringMessageRef.child(day).child(groupId).remove();
+exports.delete = async (expiringTime, groupId) => {
+  return firebaseExpiringMessageRef.child(expiringTime).child(groupId).remove();
 };

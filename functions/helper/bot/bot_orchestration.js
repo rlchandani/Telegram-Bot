@@ -110,7 +110,7 @@ exports.commandDeRegister = async (ctx) => {
 exports.commandQuote = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id, messageAction.DELETE));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
 
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
@@ -123,14 +123,14 @@ exports.commandQuote = async (ctx) => {
     if (replyMessages.length > 0) {
       const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
       if (message.chat.type === "group") {
-        promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+        promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
       }
     }
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   }
   await Promise.all(promises);
 };
@@ -138,7 +138,7 @@ exports.commandQuote = async (ctx) => {
 exports.commandSp500Up = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id, messageAction.DELETE));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
 
   const response = await RobinhoodWrapperClient.getSP500Up();
   if ("results" in response) {
@@ -150,7 +150,7 @@ exports.commandSp500Up = async (ctx) => {
       if (replyMessages.length > 0) {
         const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
         if (message.chat.type === "group") {
-          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
         }
       }
     }
@@ -158,7 +158,7 @@ exports.commandSp500Up = async (ctx) => {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   }
   await Promise.all(promises);
 };
@@ -166,7 +166,7 @@ exports.commandSp500Up = async (ctx) => {
 exports.commandSp500Down = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id, messageAction.DELETE));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
 
   const response = await RobinhoodWrapperClient.getSP500Down();
   if ("results" in response) {
@@ -181,7 +181,7 @@ exports.commandSp500Down = async (ctx) => {
           disable_web_page_preview: true,
         });
         if (message.chat.type === "group") {
-          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
         }
       }
     }
@@ -189,7 +189,7 @@ exports.commandSp500Down = async (ctx) => {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   }
   await Promise.all(promises);
 };
@@ -197,7 +197,7 @@ exports.commandSp500Down = async (ctx) => {
 exports.commandNews = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id, messageAction.DELETE));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
 
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
@@ -214,13 +214,13 @@ exports.commandNews = async (ctx) => {
             // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
           });
           if (message.chat.type === "group") {
-            promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+            promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
           }
         } else {
           const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
             parse_mode: "Markdown",
           });
-          promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
         }
       }
     });
@@ -228,7 +228,7 @@ exports.commandNews = async (ctx) => {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   }
   await Promise.all(promises);
 };
@@ -236,7 +236,7 @@ exports.commandNews = async (ctx) => {
 exports.commandWatch = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(timeUtil.nowHour(), message.chat.id, message.message_id, messageAction.DELETE));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
 
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
@@ -251,7 +251,7 @@ exports.commandWatch = async (ctx) => {
       disable_web_page_preview: true,
     });
     if (message.chat.type === "group") {
-      promises.push(registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE));
+      promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
     }
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));

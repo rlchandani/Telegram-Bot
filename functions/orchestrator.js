@@ -95,27 +95,31 @@ exports.getPolls = async (groupId) => {
 
 /** *********************** ExpiringMessageDao orchestrator ************************ */
 
-exports.registerExpiringMessage = async (day, groupId, messageId, action) => {
+exports.registerExpiringMessage = async (groupId, messageId, action, expiringTime = timeUtil.expireIn24Hours()) => {
   try {
-    await expiringMessageDao.add(day, groupId, messageId, action);
-    functions.logger.info(`Message registered for groupId: ${groupId} and day: ${day}`);
+    await expiringMessageDao.add(groupId, messageId, action, expiringTime.unix());
+    functions.logger.info(`Message registered for groupId: ${groupId} with expiring time: ${expiringTime.unix()}`);
   } catch (err) {
-    functions.logger.error(`Message failed to register for groupId: ${groupId} and day: ${day}`);
+    functions.logger.error(`Message failed to register for groupId: ${groupId} with expiring time: ${expiringTime.unix()}`);
     throw err;
   }
 };
 
-exports.getExpiringMessageForDay = async (day) => {
-  const snapshot = await expiringMessageDao.getAllForDay(day);
+exports.getExpiringMessages = async (overrideEndHour = 0) => {
+  const currentHour = moment().tz("America/Los_Angeles").set({ minute: 0, second: 0, millisecond: 0 });
+  const start = currentHour.clone().subtract(24, "hour").unix().toString();
+  const end = currentHour.clone().add(overrideEndHour, "hour").unix().toString(); // TODO
+  const snapshot = await expiringMessageDao.get(start, end);
   if (snapshot !== null) {
     return snapshot;
   }
-  functions.logger.info(`No expiring message(s) found for day: ${day}`);
+  functions.logger.info(`No expiring message(s) found for period between ${start} and ${end}`);
   return {};
 };
 
-exports.deleteExpiringMessageForGroup = async (day, groupId) => {
-  await expiringMessageDao.delete(day, groupId);
+exports.deleteExpiringMessageForGroup = async (expiringTime, groupId) => {
+  functions.logger.log(`Deleting expired messages from table for expiringTime: ${expiringTime} and group: ${groupId}`);
+  await expiringMessageDao.delete(expiringTime, groupId);
 };
 
 /** *********************** RegisteredGroupDao orchestrator ************************ */
@@ -289,7 +293,7 @@ const _sendPollToRegisteredGroups = async (bot, question, options, extra, group)
     const replyMessage = await bot.telegram.sendPoll(group.id, question, options, extra);
     try {
       await this.pinChatMessage(bot, group.id, replyMessage.message_id);
-      await this.registerExpiringMessage(timeUtil.nowHour(), replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN);
+      await this.registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN, timeUtil.expireIn3Hours());
     } catch (err) {
       console.error(`Failed to pin messageId: ${replyMessage.message_id} to groupId: ${group.id}`, err);
     }
@@ -310,41 +314,30 @@ exports.sendMessageToRegisteredGroups = async (bot, messageTest, extra) => {
 
 /** *********************** Expire Message Wrapper ************************ */
 
-exports.expireMessages = async (bot) => {
-  const promises = [];
-
-  const expiringHours = [3, 24];
-  expiringHours.forEach(async (hour) => promises.push(_expireMessages(bot, hour)));
-
-  await Promise.all(promises);
-};
-
-const _expireMessages = async (bot, hour) => {
+exports.expireMessages = async (bot, overrideEndHour = 0) => {
   const actionRequestList = [];
   const deleteFromTableRequestList = [];
 
-  const date = timeUtil.expiringTime(hour);
-  const messages = await this.getExpiringMessageForDay(date);
-  for (const [groupId, messagesMap] of Object.entries(messages)) {
-    Object.values(messagesMap).forEach((message) => {
-      switch (message.action) {
-        case messageAction.DELETE:
-          if (hour == 24) {
-            functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+  const messages = await this.getExpiringMessages(overrideEndHour);
+  for (const [expiringTime, groupWithMessages] of Object.entries(messages)) {
+    for (const [groupId, messages] of Object.entries(groupWithMessages)) {
+      functions.logger.info(`Expiring messages for time: ${expiringTime} and groupId: ${groupId}`);
+      Object.values(messages).forEach((message) => {
+        switch (message.action) {
+          case messageAction.DELETE:
+            functions.logger.info(`Expiring messageId: ${message.messageId} for action: ${message.action}`);
             actionRequestList.push(this.deleteMessage(bot, groupId, message.messageId));
-          }
-          break;
-        case messageAction.UNPIN:
-          if (hour == 3) {
-            functions.logger.info(`Expiring messageId: ${message.messageId} from groupId: ${groupId} with action: ${message.action}`);
+            break;
+          case messageAction.UNPIN:
+            functions.logger.info(`Expiring messageId: ${message.messageId} for action: ${message.action}`);
             actionRequestList.push(this.unpinChatMessage(bot, groupId, message.messageId));
-          }
-          break;
-        default:
-          console.log(`Expiring message action not defined. Action: ${message.action}`);
-      }
-    });
-    deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(date, groupId));
+            break;
+          default:
+            functions.logger.log(`Expiring message action not defined. Action: ${message.action}`);
+        }
+      });
+      deleteFromTableRequestList.push(this.deleteExpiringMessageForGroup(expiringTime, groupId));
+    }
   }
 
   await Promise.all(actionRequestList);

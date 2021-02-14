@@ -84,6 +84,26 @@ exports.debug = functions.https.onRequest(async (request, response) => {
   response.send("Debugging API");
 });
 
+exports.debugScheduledPoll = functions.https.onRequest(async (request, response) => {
+  await orchestrator.sendPollToRegisteredGroups(
+    bot,
+    "Debug Poll?",
+    ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
+    { is_anonymous: false }
+  );
+  response.send("Debugging - Poll sent, will be delivered if group is registered to scheduled poll service");
+});
+
+exports.debugScheduledMessage = functions.https.onRequest(async (request, response) => {
+  await orchestrator.sendMessageToRegisteredGroups(bot, "⏰ Debug Message", { parse_mode: "Markdown", reply_markup: { force_reply: true } });
+  response.send("Debugging - Messaged Sent, will be delivered if group is registered to scheduled poll service");
+});
+
+exports.debugExpireMessages = functions.https.onRequest(async (request, response) => {
+  await orchestrator.expireMessages(bot, 3);
+  response.send("Debugging - Expiring Messages");
+});
+
 /** **********************************  Every Hour  ********************************** **/
 // GCP Scheduler: Run everyday at 0000 hours PST
 exports.everyHour = functions.pubsub

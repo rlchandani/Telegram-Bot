@@ -7,10 +7,7 @@ const isTimeBetween = (startTime, endTime, serverTime) => {
   const end = moment(endTime, "H:mm");
   const server = moment(serverTime, "H:mm");
   if (end < start) {
-    return (
-      (server >= start && server <= moment("23:59:59", "h:mm:ss")) ||
-      (server >= moment("0:00:00", "h:mm:ss") && server < end)
-    );
+    return (server >= start && server <= moment("23:59:59", "h:mm:ss")) || (server >= moment("0:00:00", "h:mm:ss") && server < end);
   }
   return server >= start && server < end;
 };
@@ -31,8 +28,16 @@ exports.nowHour = (timezone = "America/Los_Angeles") => {
   return moment().tz(timezone).format("YYYY-MM-DDTHH");
 };
 
-exports.expiringTime = (hour = 24, timezone = "America/Los_Angeles") => {
-  return moment().tz(timezone).subtract(hour, "hours").format("YYYY-MM-DDTHH");
+exports.expireIn2Hours = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).add(2, "hour").set({ minute: 0, second: 0, millisecond: 0 });
+};
+
+exports.expireIn3Hours = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).add(3, "hour").set({ minute: 0, second: 0, millisecond: 0 });
+};
+
+exports.expireIn24Hours = (timezone = "America/Los_Angeles") => {
+  return moment().tz(timezone).add(24, "hour").set({ minute: 0, second: 0, millisecond: 0 });
 };
 
 exports.currentWeekDays = (timezone = "America/Los_Angeles") => {
