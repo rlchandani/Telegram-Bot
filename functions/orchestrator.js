@@ -408,7 +408,8 @@ exports.sendReportForWatchlistByPerformanceToGroups = async (bot, groupId) => {
     const watchlistTickersByPerformance = await reporter.getWatchlistTickersByPerformance(group.id);
     const messageText = watchlistTickersByPerformance.slice(0, 10).map((item, index) => {
       return (
-        `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
+        `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol}) ${item.country_flag} (${item.country})\n` +
+        `*Sector:* ${item.sector}\n` +
         `*Added On:* \`\`\`${moment.unix(item.first_mentioned_on).format("YYYY-MM-DD")}\`\`\` ($${item.first_mentioned_price})\n` +
         `*Current Price:* \`\`\`$${item.last_trade_price}\`\`\`\n` +
         `*Total P/L:* \`\`\`$${item.pl}\`\`\` (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
@@ -431,6 +432,38 @@ exports.sendReportForWatchlistByPerformanceToGroups = async (bot, groupId) => {
       parse_mode: "Markdown",
     });
   }
+};
+
+exports.sendReportForWatchlistByPerformanceGroupBySectorToGroups = async (bot, groupId) => {
+  const promises = [];
+
+  try {
+    const group = await this.getRegisteredGroupById(groupId);
+    const watchlistTickersByPerformanceGroupBySector = await reporter.getWatchlistTickersByPerformanceGroupBySector(group.id);
+    let replyMessageText = "";
+    Object.keys(watchlistTickersByPerformanceGroupBySector).forEach((sector) => {
+      const watchlistTickersByPerformance = watchlistTickersByPerformanceGroupBySector[sector];
+      const messageText = watchlistTickersByPerformance.slice(0, 1).map((item, index) => {
+        return `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol}) ${item.country_flag} (\`\`\`$${item.last_trade_price}\`\`\`)`;
+      });
+      if (messageText.length > 0) {
+        replyMessageText += `\n\n*Sector:* ${sector}\n` + messageText.join("\n");
+      }
+    });
+    if (replyMessageText) {
+      const groupName = group.type == "group" ? group.title : group.first_name;
+      const headerText = `*Watchlist Status:* ${groupName}\nTop 10 performaning stocks from watchlist per sector:`;
+      promises.push(bot.telegram.sendMessage(group.id, headerText + replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
+    } else {
+      promises.push(bot.telegram.sendMessage(groupId, "Watchlist is empty!", { parse_mode: "Markdown" }));
+    }
+  } catch (err) {
+    await bot.telegram.sendMessage(groupId, "Group is not registered to receive response.\nPlease register using /register", {
+      parse_mode: "Markdown",
+    });
+  }
+
+  await Promise.all(promises);
 };
 
 exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGroupId) => {

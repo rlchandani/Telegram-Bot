@@ -140,6 +140,28 @@ class RobinhoodWrapper {
     });
   };
 
+  getFundamentals = async (symbol) => {
+    if (this.Robinhood == null) {
+      this.Robinhood = await this.login();
+    }
+    return new Promise((resolve, reject) => {
+      this.Robinhood.fundamentals(symbol, (err, response, body) => {
+        resolve(body);
+      });
+    });
+  };
+
+  getTag = async (tag) => {
+    if (this.Robinhood == null) {
+      this.Robinhood = await this.login();
+    }
+    return new Promise((resolve, reject) => {
+      this.Robinhood.tag(tag, (err, response, body) => {
+        resolve(body);
+      });
+    });
+  };
+
   getMarkets = async (symbol) => {
     if (this.Robinhood == null) {
       this.Robinhood = await this.login();

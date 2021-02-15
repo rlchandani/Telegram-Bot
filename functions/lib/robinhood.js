@@ -600,7 +600,7 @@ function RobinhoodWebApi(opts, callback) {
   api.tag = function (tag, callback) {
     return _request.get(
       {
-        uri: _apiUrl + _endpoints.tag + tag
+        uri: _apiUrl + _endpoints.tag + tag + "/"
       },
       callback
     );

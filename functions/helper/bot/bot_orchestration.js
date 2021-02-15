@@ -21,6 +21,8 @@ const utils = require("../utils");
 const timeUtil = require("../timeUtil");
 const messageAction = require("../../model/message_action");
 const { registerOptions } = require("../../model/register_action");
+const countryCodeToFlag = require("country-code-to-flag");
+const _ = require("lodash-contrib");
 let config = functions.config();
 
 // Check if not dev
@@ -340,7 +342,7 @@ const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
 
   const tickerText = hyperlink ? `[${tickerSymbol}](https://robinhood.com/stocks/${tickerSymbol})` : `${tickerSymbol}`;
   return (
-    `*Ticker:* ${tickerText}\n` +
+    `*Ticker:* ${tickerText} ${stockQuote.country_flag} (${stockQuote.country})\n` +
     `*Price:* $${extendedTradedPrice} ${totalIcon}\n` +
     `*Today:* $${todayDiff} (${todayPL}%) ${todayIcon}\n` +
     `*After Hours:* $${todayAfterHourDiff} (${todayAfterHourDiffPL}%) ${todayAfterHourDiffIcon}\n\n`
@@ -348,13 +350,52 @@ const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
   );
 };
 
-exports.getStockListQuote = async (tickerSymbols) => {
+/* exports.getStockListQuote = async (tickerSymbols) => {
   const response = await RobinhoodWrapperClient.getQuote(tickerSymbols);
   if ("results" in response) {
     const stockQuote = response.results;
-    return stockQuote.filter((s) => s != null);
+    const filteredStockQuote = await Promise.all(
+      stockQuote
+        .filter((s) => s != null)
+        .map(async (stockQuote) => {
+          return new Promise((resolve, reject) => {
+            RobinhoodWrapperClient.getUrl(stockQuote.instrument).then((instrumentDocument) => {
+              stockQuote["country"] = instrumentDocument.country;
+              stockQuote["country_flag"] = countryCodeToFlag(instrumentDocument.country);
+              resolve(stockQuote);
+            });
+          });
+        })
+    );
+    return filteredStockQuote;
   }
   return [];
+}; */
+
+exports.getStockListQuote = (tickerSymbols) => {
+  if (_.isEmpty(tickerSymbols)) {
+    return [];
+  }
+  return new Promise((resolve, reject) => {
+    RobinhoodWrapperClient.getQuote(tickerSymbols).then((stockQuoteResponse) => {
+      if ("results" in stockQuoteResponse) {
+        const stockQuotes = Promise.all(
+          stockQuoteResponse.results
+            .filter((s) => s != null)
+            .map((stockQuote) => {
+              return new Promise((resolve, reject) => {
+                RobinhoodWrapperClient.getUrl(stockQuote.instrument).then((instrumentDocument) => {
+                  stockQuote["country"] = instrumentDocument.country;
+                  stockQuote["country_flag"] = countryCodeToFlag(instrumentDocument.country);
+                  resolve(stockQuote);
+                });
+              });
+            })
+        );
+        resolve(stockQuotes);
+      }
+    });
+  });
 };
 
 exports.commandCreatePoll = async (ctx) => {
