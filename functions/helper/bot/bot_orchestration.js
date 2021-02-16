@@ -119,7 +119,7 @@ exports.commandQuote = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
@@ -245,7 +245,7 @@ exports.commandWatch = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
-      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks Watchlist", stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.track, stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
     const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
@@ -270,7 +270,7 @@ exports.onText = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
@@ -291,7 +291,7 @@ exports.onEditedMessage = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist("Stonks", stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
