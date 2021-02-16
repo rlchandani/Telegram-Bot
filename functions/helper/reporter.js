@@ -1,18 +1,16 @@
 "use strict";
 
-const functions = require("firebase-functions");
+const { firebaseConfig } = require("../helper/firebase_config");
 const countryCodeToFlag = require("country-code-to-flag");
 const RobinhoodWrapper = require("../helper/robinhood_wrapper");
 const orchestrator = require("../orchestrator");
 const _ = require("lodash-contrib");
-let config = functions.config();
 
-// Check if not dev
-if (process.env.FUNCTIONS_EMULATOR) {
-  config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
-}
-
-const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+const RobinhoodWrapperClient = new RobinhoodWrapper(
+  firebaseConfig.robinhood.username,
+  firebaseConfig.robinhood.password,
+  firebaseConfig.robinhood.api_key
+);
 
 exports.getTopMentionedTickersByCount = async (groupId, days) => {
   const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);

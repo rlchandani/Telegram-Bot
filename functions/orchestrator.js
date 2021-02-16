@@ -1,6 +1,7 @@
 "use strict";
 
 const functions = require("firebase-functions");
+const { firebaseConfig } = require("./helper/firebase_config");
 const registeredGroupDao = require("./dao/registeredGroupDao");
 const registeredUserDao = require("./dao/registeredUserDao");
 const pollDao = require("./dao/pollDao");
@@ -161,7 +162,7 @@ exports.getRegisteredGroupById = async (groupId) => {
     return snapshot;
   }
   functions.logger.info(`No group found with id: ${groupId}`);
-  throw new Error(`No group found with id: ${groupId}`);
+  return {};
 };
 
 exports.deRegisteredGroup = async (groupId) => {
@@ -370,9 +371,9 @@ exports.unpinChatMessage = async (bot, groupId, messageId) => {
 
 /** *********************** Send Message on Holidays Wrapper ************************ */
 
-exports.usaHoliday = async (bot, config) => {
+exports.usaHoliday = async (bot) => {
   const me = await bot.telegram.getMe();
-  const usaEvents = await calendar.getTodayEventUSA(config.google.api_key);
+  const usaEvents = await calendar.getTodayEventUSA(firebaseConfig.google.api_key);
   if (usaEvents.length == 0) {
     functions.logger.info("No USA events found for today");
   }
@@ -385,9 +386,9 @@ exports.usaHoliday = async (bot, config) => {
   });
 };
 
-exports.indiaHoliday = async (bot, config) => {
+exports.indiaHoliday = async (bot) => {
   const me = await bot.telegram.getMe();
-  const indiaEvents = await calendar.getTodayEventIndia(config.google.api_key);
+  const indiaEvents = await calendar.getTodayEventIndia(firebaseConfig.google.api_key);
   if (indiaEvents.length == 0) {
     functions.logger.info("No Indian events found for today");
   }

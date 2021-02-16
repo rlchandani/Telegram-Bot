@@ -1,8 +1,8 @@
 "use strict";
 
 const functions = require("firebase-functions");
+const { firebaseConfig } = require("./helper/firebase_config");
 const { Telegraf } = require("telegraf");
-let config = functions.config();
 const commandBot = require("./helper/bot/command");
 const onBot = require("./helper/bot/on");
 const onAction = require("./helper/bot/action");
@@ -13,29 +13,9 @@ const utils = require("./helper/utils");
 const moment = require("moment-timezone");
 const RobinhoodWrapper = require("./helper/robinhood_wrapper");
 
-// Check if not dev
-if (process.env.FUNCTIONS_EMULATOR) {
-  config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
-}
-
-// Check if bot_token is defined
-if (config.telegram.bot_token === undefined) {
-  throw new TypeError("Telegram bot token must be provided!");
-}
-
-// Check if api_key is defined
-if (config.google.api_key === undefined) {
-  throw new TypeError("Google API key must be provided!");
-}
-
-// Check if robinhood credentials is defined
-if (config.robinhood.username === undefined || config.robinhood.password === undefined || config.robinhood.api_key === undefined) {
-  throw new TypeError("Robinhood credentials must be provided!");
-}
-
 /** **********************************  Telegram Init  ********************************** **/
 // Configure Telegraf bot using access token
-const bot = new Telegraf(config.telegram.bot_token);
+const bot = new Telegraf(firebaseConfig.telegram.bot_token);
 bot.use(async (ctx, next) => {
   // console.time(`Processing update ${ctx.update.update_id}`);
   await next(); // runs next middleware
@@ -109,11 +89,11 @@ exports.debug = functions.https.onRequest(async (request, response) => {
         break;
       case "holidayEventsIndia":
         msg = "Holiday Events (India) Sent, will be delivered if group is registered to holidaty events (India) service";
-        await orchestrator.indiaHoliday(bot, config);
+        await orchestrator.indiaHoliday(bot);
         break;
       case "holidayEventsUSA":
         msg = "Holiday Events (USA) Sent, will be delivered if group is registered to holidaty events (USA) service";
-        await orchestrator.usaHoliday(bot, config);
+        await orchestrator.usaHoliday(bot);
         break;
       default:
         msg = "Action not defined";
@@ -142,7 +122,7 @@ exports.midnightISTScheduledFunction = functions.pubsub
   .timeZone("Asia/Kolkata")
   .onRun(async (context) => {
     functions.logger.info("Scheduled event trigerred 0000 IST");
-    orchestrator.indiaHoliday(bot, config);
+    orchestrator.indiaHoliday(bot);
   });
 
 // GCP Scheduler: Run everyday at 0000 hours PST
@@ -152,7 +132,7 @@ exports.midnighPSTScheduledFunction = functions.pubsub
   .onRun(async (context) => {
     functions.logger.info("Scheduled event trigerred 0000 PST");
     // USA Holidays
-    orchestrator.usaHoliday(bot, config);
+    orchestrator.usaHoliday(bot);
   });
 
 /** *******************************  Portfolio Poll Events Schedulers  ****************************** **/
@@ -160,7 +140,11 @@ exports.midnighPSTScheduledFunction = functions.pubsub
 // GCP Scheduler: Runs on weekday at 0900, 1600 and 1800 hours
 exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,18 * * 1-5").onRun(async (context) => {
   functions.logger.info("Scheduled poll trigerred @9AM/4PM/6PM");
-  const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+  const RobinhoodWrapperClient = new RobinhoodWrapper(
+    firebaseConfig.robinhood.username,
+    firebaseConfig.robinhood.password,
+    firebaseConfig.robinhood.api_key
+  );
   if (await utils.isMarketOpenToday(RobinhoodWrapperClient)) {
     functions.logger.info("Market is open today");
     if (timeUtil.is9AM("America/Los_Angeles")) {

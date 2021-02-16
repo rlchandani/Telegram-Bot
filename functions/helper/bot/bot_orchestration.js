@@ -1,6 +1,6 @@
 "use strict";
 
-const functions = require("firebase-functions");
+const { firebaseConfig } = require("../../helper/firebase_config");
 const { Markup } = require("telegraf");
 const RobinhoodWrapper = require("../robinhood_wrapper");
 const {
@@ -23,14 +23,12 @@ const messageAction = require("../../model/message_action");
 const { registerOptions } = require("../../model/register_action");
 const countryCodeToFlag = require("country-code-to-flag");
 const _ = require("lodash-contrib");
-let config = functions.config();
 
-// Check if not dev
-if (process.env.FUNCTIONS_EMULATOR) {
-  config = JSON.parse(process.env.DEBUG_TELEGRAM_CONFIG);
-}
-
-const RobinhoodWrapperClient = new RobinhoodWrapper(config.robinhood.username, config.robinhood.password, config.robinhood.api_key);
+const RobinhoodWrapperClient = new RobinhoodWrapper(
+  firebaseConfig.robinhood.username,
+  firebaseConfig.robinhood.password,
+  firebaseConfig.robinhood.api_key
+);
 
 exports.commandStatus = async (ctx) => {
   const message = ctx.update.message;
@@ -119,7 +117,7 @@ exports.commandQuote = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
@@ -245,7 +243,7 @@ exports.commandWatch = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
-      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.track, stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.track, stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
     const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
@@ -270,7 +268,7 @@ exports.onText = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
@@ -291,7 +289,7 @@ exports.onEditedMessage = async (ctx) => {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
-      promises.push(RobinhoodWrapperClient.addToWatchlist(config.watchlist.mentioned, stockQuote.symbol));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
