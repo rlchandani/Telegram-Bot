@@ -35,6 +35,13 @@ exports.registerOptions = [
       description: "Send scheduled holiday events - USA",
     },
   ],
+  [
+    {
+      action: "all_services",
+      name: "All Services",
+      description: "Enable/Disable all available services",
+    },
+  ],
   // [
   //   {
   //     action: "scheduled_stats",

@@ -2,6 +2,7 @@
 
 const functions = require("firebase-functions");
 const orchestrator = require("../../orchestrator");
+const registerAction = require("../../model/register_action");
 const { Markup } = require("telegraf");
 
 exports.register = (bot) => {
@@ -158,5 +159,42 @@ exports.register = (bot) => {
     const message = ctx.update.callback_query.message;
     await orchestrator.disableService(message.chat.id, "holiday_events_usa");
     await ctx.editMessageText("Holiday Events (USA) Service - Disabled");
+  });
+
+  /** *********************** All Services ************************ */
+
+  bot.action("all_services", async (ctx) => {
+    functions.logger.info("Telegram Event: Action All Services");
+    const responseKeyboard = Markup.inlineKeyboard([
+      Markup.button.callback("Enable", "all_services_enable"),
+      Markup.button.callback("Disable", "all_services_disable"),
+    ]);
+    await ctx.editMessageText("Action for All Services:", responseKeyboard);
+  });
+
+  bot.action("all_services_enable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action All Services Enable");
+    const message = ctx.update.callback_query.message;
+    const promises = [];
+    registerAction.registerOptions.forEach((optionGroup) =>
+      optionGroup.forEach((option) => {
+        promises.push(orchestrator.enableService(message.chat.id, option.action));
+      })
+    );
+    await Promise.all(promises);
+    await ctx.editMessageText("All Services - Enabled");
+  });
+
+  bot.action("all_services_disable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action All Services Disable");
+    const message = ctx.update.callback_query.message;
+    const promises = [];
+    registerAction.registerOptions.forEach((optionGroup) =>
+      optionGroup.forEach((option) => {
+        promises.push(orchestrator.disableService(message.chat.id, option.action));
+      })
+    );
+    await Promise.all(promises);
+    await ctx.editMessageText("All Services - Disabled");
   });
 };
