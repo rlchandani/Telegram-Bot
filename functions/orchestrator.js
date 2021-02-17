@@ -289,15 +289,13 @@ exports.sendPollToRegisteredGroups = async (bot, question, options, extra) => {
 };
 
 const _sendPollToRegisteredGroups = async (bot, question, options, extra, group) => {
-  if (group.enabled === true) {
-    functions.logger.info(`Sending poll to ${group.id}`);
-    const replyMessage = await bot.telegram.sendPoll(group.id, question, options, extra);
-    try {
-      await this.pinChatMessage(bot, group.id, replyMessage.message_id);
-      await this.registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN, timeUtil.expireIn3Hours());
-    } catch (err) {
-      console.error(`Failed to pin messageId: ${replyMessage.message_id} to groupId: ${group.id}`, err);
-    }
+  functions.logger.info(`Sending poll to ${group.id}`);
+  const replyMessage = await bot.telegram.sendPoll(group.id, question, options, extra);
+  try {
+    await this.pinChatMessage(bot, group.id, replyMessage.message_id);
+    await this.registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.UNPIN, timeUtil.expireIn3Hours());
+  } catch (err) {
+    console.error(`Failed to pin messageId: ${replyMessage.message_id} to groupId: ${group.id}`, err);
   }
 };
 
