@@ -36,13 +36,11 @@ exports.commandStatus = async (ctx) => {
   const requesterName = message.from.first_name;
   const groupId = message.chat.id;
   const serviceStatus = await getRegisteredGroupServiceStatus(groupId);
-  const replyMessage = Object.keys(serviceStatus).map((serviceName) => `${serviceName} - \`\`\`${serviceStatus[serviceName]}\`\`\``);
-  await ctx.reply(
-    "*Service Registration Status:*\n\n" + replyMessage.join("\n") + `\n\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
-    {
-      parse_mode: "Markdown",
-    }
-  );
+  const replyMessage = Object.keys(serviceStatus).map((serviceName) => `${serviceName} - \`${serviceStatus[serviceName]}\``);
+  await ctx.reply("*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+    parse_mode: "Markdown",
+  });
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandRegister = async (ctx) => {
@@ -64,15 +62,20 @@ exports.commandRegister = async (ctx) => {
       await ctx.reply("Choose from following services:", registerOptionKeyboard);
     } else {
       await ctx.reply(
-        "🚫 Unauthorized Access: Only group admins are permitted this operation.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "🚫 Unauthorized Access: Only group admins are permitted this operation.\n\n" +
+          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     }
   } else {
-    await ctx.reply("Registration failed, only groups are allowed to register.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
-      parse_mode: "Markdown",
-    });
+    await ctx.reply(
+      "❌ Registration Failed: only groups are allowed to register.\n\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      {
+        parse_mode: "Markdown",
+      }
+    );
   }
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandDeRegister = async (ctx) => {
@@ -90,7 +93,8 @@ exports.commandDeRegister = async (ctx) => {
       }
       await deRegisteredGroup(groupId);
       await ctx.reply(
-        "Deregistered, this group has been removed from all registered services.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+        "✅ Request Completed: Group has been removed from all registered services.\n" +
+          `Requested by [${requesterName}](tg://user?id=${requesterId})`,
         { parse_mode: "Markdown" }
       );
     } else {
@@ -101,45 +105,38 @@ exports.commandDeRegister = async (ctx) => {
     }
   } else {
     await ctx.reply(
-      "Deregistered failed, only groups are allowed to deregister.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      "❌ Deregistered Failed: Only groups are allowed to deregister.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
       { parse_mode: "Markdown" }
     );
   }
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandQuote = async (ctx) => {
-  const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    const promises = [];
     stockListQuote.forEach((stockQuote) => {
       promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
+    await Promise.all(promises);
     const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     if (replyMessages.length > 0) {
       const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
-      if (message.chat.type === "group") {
-        promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-      }
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
     }
   } else {
-    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", {
-      parse_mode: "Markdown",
-    });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   }
-  await Promise.all(promises);
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandSp500Up = async (ctx) => {
-  const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-
   const response = await RobinhoodWrapperClient.getSP500Up();
   if ("results" in response) {
     const results = response.results;
@@ -149,25 +146,20 @@ exports.commandSp500Up = async (ctx) => {
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       if (replyMessages.length > 0) {
         const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
-        if (message.chat.type === "group") {
-          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-        }
+        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
       }
     }
   } else {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   }
-  await Promise.all(promises);
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandSp500Down = async (ctx) => {
-  const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-
   const response = await RobinhoodWrapperClient.getSP500Down();
   if ("results" in response) {
     const results = response.results;
@@ -176,68 +168,56 @@ exports.commandSp500Down = async (ctx) => {
       const stockListQuote = await this.getStockListQuote(tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join(""), {
-          parse_mode: "Markdown",
-          disable_web_page_preview: true,
-        });
-        if (message.chat.type === "group") {
-          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-        }
+        const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
       }
     }
   } else {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   }
-  await Promise.all(promises);
+  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandNews = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
-    tickerSymbols.forEach(async (tickerSymbol) => {
-      const response = await RobinhoodWrapperClient.getNews(tickerSymbol);
-      if ("results" in response) {
-        const results = response.results;
-        const replyMessages = results.map((s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`);
-        // const urlButtons = results.map((s, i) => ({ text: i + 1, url: s.url }));
-        if (replyMessages.length > 0) {
-          const replyMessage = await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
-            parse_mode: "Markdown",
-            disable_web_page_preview: true,
-            // reply_markup: JSON.stringify({ inline_keyboard: [urlButtons] }),
-          });
-          if (message.chat.type === "group") {
-            promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-          }
-        } else {
-          const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, {
-            parse_mode: "Markdown",
-          });
-          promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-        }
-      }
-    });
+    tickerSymbols.forEach(async (tickerSymbol) => promises.push(_commandNews(ctx, tickerSymbol)));
   } else {
-    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", {
-      parse_mode: "Markdown",
-    });
+    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", { parse_mode: "Markdown" });
     promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   }
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
+};
+
+const _commandNews = async (ctx, tickerSymbol) => {
+  const response = await RobinhoodWrapperClient.getNews(tickerSymbol);
+  if ("results" in response) {
+    const replyMessages = response.results.map((s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`);
+    if (replyMessages.length > 0) {
+      const replyMessage = await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    } else {
+      const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    }
+  } else {
+    const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  }
 };
 
 exports.commandWatch = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
@@ -256,6 +236,7 @@ exports.commandWatch = async (ctx) => {
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
   }
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
 };
 
@@ -307,11 +288,7 @@ exports.onNewChatMembers = async (ctx) => {
   const groupId = message.chat.id;
   if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_welcome_members")) {
     const newMember = message.new_chat_members.map((member) => `[${member.first_name}](tg://user?id=${member.id})`);
-    promises.push(
-      ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, {
-        parse_mode: "Markdown",
-      })
-    );
+    promises.push(ctx.reply(`Welcome ${newMember.join()} to *${ctx.update.message.chat.title}* group!`, { parse_mode: "Markdown" }));
   }
   message.new_chat_members.forEach((member) => {
     promises.push(registerUser(member.id, member, message.date));

@@ -24,16 +24,26 @@ exports.register = (bot) => {
 
   bot.action("scheduled_polls_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Scheduled Polls Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "scheduled_polls");
-    await ctx.editMessageText("Scheduled Polls Service - Enabled");
+    await ctx.editMessageText(`✅ Scheduled Polls Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("scheduled_polls_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Scheduled Polls Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "scheduled_polls");
-    await ctx.editMessageText("Scheduled Polls Service - Disabled");
+    await ctx.editMessageText(`✅ Scheduled Polls Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** Scheduled Reminder ************************ */
@@ -49,16 +59,26 @@ exports.register = (bot) => {
 
   bot.action("scheduled_reminders_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Scheduled Reminders Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "scheduled_reminders");
-    await ctx.editMessageText("Scheduled Reminders Service - Enabled");
+    await ctx.editMessageText(`✅ Scheduled Reminders Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("scheduled_reminders_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Scheduled Reminders Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "scheduled_reminders");
-    await ctx.editMessageText("Scheduled Reminders Service - Disabled");
+    await ctx.editMessageText(`✅ Scheduled Reminders Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** Automated Quotes ************************ */
@@ -74,16 +94,26 @@ exports.register = (bot) => {
 
   bot.action("automated_quotes_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Automated Quotes Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "automated_quotes");
-    await ctx.editMessageText("Automated Quotes Service - Enabled");
+    await ctx.editMessageText(`✅ Automated Quotes Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("automated_quotes_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Automated Quotes Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "automated_quotes");
-    await ctx.editMessageText("Automated Quotes Service - Disabled");
+    await ctx.editMessageText(`✅ Automated Quotes Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** Welcome New Member(s) ************************ */
@@ -99,16 +129,26 @@ exports.register = (bot) => {
 
   bot.action("automated_welcome_members_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Welcome New Member Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "automated_welcome_members");
-    await ctx.editMessageText("Welcome New Member Service - Enabled");
+    await ctx.editMessageText(`✅ Welcome New Member Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("automated_welcome_members_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Welcome New Member Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "automated_welcome_members");
-    await ctx.editMessageText("Welcome New Member Service - Disabled");
+    await ctx.editMessageText(`✅ Welcome New Member Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** Holiday Event India ************************ */
@@ -124,16 +164,26 @@ exports.register = (bot) => {
 
   bot.action("holiday_events_india_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Holiday Events India Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "holiday_events_india");
-    await ctx.editMessageText("Holiday Events (India) Service - Enabled");
+    await ctx.editMessageText(`✅ Holiday Events (India) Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("holiday_events_india_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Holiday Events India Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "holiday_events_india");
-    await ctx.editMessageText("Holiday Events (India) Service - Disabled");
+    await ctx.editMessageText(`✅ Holiday Events (India) Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** Holiday Event USA ************************ */
@@ -149,16 +199,26 @@ exports.register = (bot) => {
 
   bot.action("holiday_events_usa_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Holiday Events USA Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.enableService(message.chat.id, "holiday_events_usa");
-    await ctx.editMessageText("Holiday Events (USA) Service - Enabled");
+    await ctx.editMessageText(`✅ Holiday Events (USA) Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("holiday_events_usa_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action Holiday Events USA Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     await orchestrator.disableService(message.chat.id, "holiday_events_usa");
-    await ctx.editMessageText("Holiday Events (USA) Service - Disabled");
+    await ctx.editMessageText(`✅ Holiday Events (USA) Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   /** *********************** All Services ************************ */
@@ -174,7 +234,10 @@ exports.register = (bot) => {
 
   bot.action("all_services_enable", async (ctx) => {
     functions.logger.info("Telegram Event: Action All Services Enable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     const promises = [];
     registerAction.registerOptions.forEach((optionGroup) =>
       optionGroup.forEach((option) => {
@@ -182,12 +245,17 @@ exports.register = (bot) => {
       })
     );
     await Promise.all(promises);
-    await ctx.editMessageText("All Services - Enabled");
+    await ctx.editMessageText(`✅ All Services - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.action("all_services_disable", async (ctx) => {
     functions.logger.info("Telegram Event: Action All Services Disable");
-    const message = ctx.update.callback_query.message;
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
     const promises = [];
     registerAction.registerOptions.forEach((optionGroup) =>
       optionGroup.forEach((option) => {
@@ -195,6 +263,8 @@ exports.register = (bot) => {
       })
     );
     await Promise.all(promises);
-    await ctx.editMessageText("All Services - Disabled");
+    await ctx.editMessageText(`✅ All Services - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
   });
 };

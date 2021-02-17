@@ -14,35 +14,38 @@ const {
   commandStatus,
 } = require("./bot_orchestration");
 const {
+  registerExpiringMessage,
   sendReportForTopMentionedByCountToGroups,
   sendReportForTopMentionedByPerformanceToGroups,
 } = require("../../orchestrator");
-
-/* const { Markup } = require("telegraf");
-
-const keyboard = Markup.inlineKeyboard([
-  Markup.button.url("❤️", "http://telegraf.js.org"),
-  Markup.button.callback("Delete", "delete"),
-]); */
+const messageAction = require("../../model/message_action");
+const timeUtil = require("../timeUtil");
 
 exports.register = (bot) => {
   bot.start(async (ctx) => {
     functions.logger.info("Telegram Event: Start");
-    await ctx.reply(
+    const message = ctx.update.message;
+    const replyMessage = await ctx.reply(
       `Welcome ${ctx.update.message.from.first_name},\n\n` +
         "You are now connected to Masala Bot.\n\n" +
         "Use /help to get the list of supported commands."
     );
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   });
 
   bot.help(async (ctx) => {
     functions.logger.info("Telegram Event: Help");
+    const message = ctx.update.message;
     const commands = await ctx.getMyCommands();
     const info = commands.reduce((acc, val) => `${acc}/${val.command} - ${val.description}\n`, "");
-    await ctx.reply("You can control me by sending these commands:\n\n" + info);
+    const replyMessage = await ctx.reply("You can control me by sending these commands:\n\n" + info);
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   });
 
   bot.settings(async (ctx) => {
+    const message = ctx.update.message;
     await ctx.setMyCommands([
       {
         command: "/status",
@@ -109,7 +112,9 @@ exports.register = (bot) => {
       //   description: "Paper trade: Sell stock. Eg: Need ticker symbol as parameter",
       // },
     ]);
-    await ctx.reply("Bot configured");
+    const replyMessage = await ctx.reply("Bot configured");
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   });
 
   /* bot.command("quit", (ctx) => {

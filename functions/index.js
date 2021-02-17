@@ -17,14 +17,17 @@ const RobinhoodWrapper = require("./helper/robinhood_wrapper");
 // Configure Telegraf bot using access token
 const bot = new Telegraf(firebaseConfig.telegram.bot_token);
 bot.use(async (ctx, next) => {
-  // console.time(`Processing update ${ctx.update.update_id}`);
-  await next(); // runs next middleware
   const message = ctx.update.message;
   if (message !== undefined) {
-    await orchestrator.registerUser(message.from.id, message.from, message.date);
-    await orchestrator.registerGroup(message.chat.id, message.chat, message.from.id, message.date);
+    try {
+      await orchestrator.registerUser(message.from.id, message.from, message.date);
+      await orchestrator.registerGroup(message.chat.id, message.chat, message.from.id, message.date);
+      functions.logger.debug(JSON.stringify(message));
+    } catch (e) {
+      functions.logger.error("Failed in pre-middleware processing", e);
+    }
   }
-  // console.timeEnd(`Processing update ${ctx.update.update_id}`);
+  await next(); // runs next middleware
 });
 
 // Registering commands
