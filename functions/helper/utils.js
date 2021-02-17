@@ -8,7 +8,7 @@ exports.extractTickerSymbolsInsideMessageText = (message) => {
   if (_.isEmpty(message)) {
     return [];
   }
-  const re = /[\s!%^&*()_,></?;:'".=+\-\\]*(\$\w+)/g;
+  const re = /[\s!%^&*()_,></?;:'".=+\-\\]*(\$[a-zA-Z]+)/g;
   const matches = Array.from(message.matchAll(re)).map((match) => match[1]);
   return matches ? [...new Set(matches.map((m) => m.replace(/(\$+)/g, "")))] : [];
 };
