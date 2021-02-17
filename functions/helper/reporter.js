@@ -133,6 +133,8 @@ exports.getStockListQuote = (tickerSymbols) => {
           );
         });
         resolve(stockQuotes);
+      } else {
+        resolve([]);
       }
     });
   });

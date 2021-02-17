@@ -6,6 +6,7 @@ const fs = require("fs");
 const robinhood = require("../lib/robinhood");
 const { authenticator } = require("otplib");
 const tokenFile = "/tmp/token.json";
+const _ = require("lodash-contrib");
 
 class RobinhoodWrapper {
   constructor(username, password, apiKey) {
@@ -41,18 +42,24 @@ class RobinhoodWrapper {
               functions.logger.info("Credentials not found, caching credentials");
               resolve(Robinhood);
             });
+          } else {
+            resolve();
           }
         });
       }
     });
   };
 
-  getQuote = async (symbol) => {
+  getQuote = async (symbols) => {
     if (this.Robinhood == null) {
       this.Robinhood = await this.login();
     }
+    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) != symbol)) : symbols.replace(/[0-9]/g, "");
+    if (_.isEmpty(symbols)) {
+      return [];
+    }
     return new Promise((resolve, reject) => {
-      this.Robinhood.quote_data(symbol, (err, response, body) => {
+      this.Robinhood.quote_data(symbols, (err, response, body) => {
         if (err) throw err;
         resolve(body);
       });
@@ -192,9 +199,7 @@ class RobinhoodWrapper {
   getWatchlistByName = async (name) => {
     const watchlistResponse = await this.getAllWatchlist();
     const watchlists = watchlistResponse.results;
-    const filteredWatclist = watchlists
-      .filter((watchlist) => watchlist.display_name === name)
-      .map((watchlist) => watchlist.id);
+    const filteredWatclist = watchlists.filter((watchlist) => watchlist.display_name === name).map((watchlist) => watchlist.id);
     if (filteredWatclist.length > 0) {
       const listId = filteredWatclist[0];
       return this.getUrl(`https://api.robinhood.com/midlands/lists/items/?list_id=${listId}`);
@@ -206,9 +211,7 @@ class RobinhoodWrapper {
   addToWatchlist = async (name, symbol) => {
     const watchlistResponse = await this.getAllWatchlist();
     const watchlists = watchlistResponse.results;
-    const filteredWatclist = watchlists
-      .filter((watchlist) => watchlist.display_name === name)
-      .map((watchlist) => watchlist.id);
+    const filteredWatclist = watchlists.filter((watchlist) => watchlist.display_name === name).map((watchlist) => watchlist.id);
     if (filteredWatclist.length > 0) {
       const listId = filteredWatclist[0];
       const instructionDocumentsResponse = await this.getInstruments(symbol);

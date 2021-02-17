@@ -127,6 +127,9 @@ exports.commandQuote = async (ctx) => {
     if (replyMessages.length > 0) {
       const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
       await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    } else {
+      const replyMessage = await ctx.reply("None of the provided tickers were found!", { parse_mode: "Markdown" });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
     }
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
@@ -226,12 +229,15 @@ exports.commandWatch = async (ctx) => {
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.track, stockQuote.symbol));
     });
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
-    const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
-      parse_mode: "Markdown",
-      disable_web_page_preview: true,
-    });
-    if (message.chat.type === "group") {
+    if (replyMessages.length > 0) {
+      const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      });
       promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    } else {
+      const replyMessage = await ctx.reply("None of the provided tickers were found!", { parse_mode: "Markdown" });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
     }
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
@@ -362,12 +368,14 @@ exports.getStockListQuote = (tickerSymbols) => {
                 RobinhoodWrapperClient.getUrl(stockQuote.instrument).then((instrumentDocument) => {
                   stockQuote["country"] = instrumentDocument.country;
                   stockQuote["country_flag"] = countryCodeToFlag(instrumentDocument.country);
-                  resolve(stockQuote);
+                  return resolve(stockQuote);
                 });
               });
             })
         );
         resolve(stockQuotes);
+      } else {
+        resolve([]);
       }
     });
   });
