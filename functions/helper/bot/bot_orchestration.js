@@ -22,6 +22,7 @@ const timeUtil = require("../timeUtil");
 const messageAction = require("../../model/message_action");
 const { registerOptions } = require("../../model/register_action");
 const countryCodeToFlag = require("country-code-to-flag");
+const { flaggedCountries } = require("../constant");
 const _ = require("lodash-contrib");
 
 const RobinhoodWrapperClient = new RobinhoodWrapper(
@@ -114,7 +115,10 @@ exports.commandDeRegister = async (ctx) => {
 
 exports.commandQuote = async (ctx) => {
   const message = ctx.update.message;
+  const requesterId = message.from.id;
+  const requesterName = message.from.first_name;
   const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
+  let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     const promises = [];
@@ -123,14 +127,28 @@ exports.commandQuote = async (ctx) => {
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     await Promise.all(promises);
-    const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-    if (replyMessages.length > 0) {
-      const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
-    } else {
-      const replyMessage = await ctx.reply("None of the provided tickers were found!", { parse_mode: "Markdown" });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    if (await checkIfServiceActiveOnRegisteredGroup(message.chat.id, "report_flagged_country")) {
+      flaggedCountryList = Object.keys(flaggedCountries);
     }
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+    const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
+    const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+    let replyMessageText = replyMessages.join("");
+    if (notFoundStockList.length > 0) {
+      replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+    }
+    const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+
+    flaggedCountryList.forEach((countryCode) => {
+      const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
+      const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
+      const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
+      const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      if (flaggedReplyMessages.length > 0) {
+        promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+      }
+    });
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
     await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
@@ -228,17 +246,14 @@ exports.commandWatch = async (ctx) => {
       promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.track, stockQuote.symbol));
     });
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
-    if (replyMessages.length > 0) {
-      const replyMessage = await ctx.reply("Added to watchlist: " + replyMessages.join(", "), {
-        parse_mode: "Markdown",
-        disable_web_page_preview: true,
-      });
-      promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
-    } else {
-      const replyMessage = await ctx.reply("None of the provided tickers were found!", { parse_mode: "Markdown" });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    let replyMessageText = replyMessages.length > 0 ? "*Added to watchlist:*\n" + replyMessages.join(", ") + "\n\n" : "";
+    if (notFoundStockList.length > 0) {
+      replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
+    const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
   }
@@ -249,8 +264,11 @@ exports.commandWatch = async (ctx) => {
 exports.onText = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
+  const requesterId = message.from.id;
+  const requesterName = message.from.first_name;
   const groupId = message.chat.id;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
+  let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
@@ -258,10 +276,28 @@ exports.onText = async (ctx) => {
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
-      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-      if (replyMessages.length > 0) {
-        promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+      if (await checkIfServiceActiveOnRegisteredGroup(groupId, "report_flagged_country")) {
+        flaggedCountryList = Object.keys(flaggedCountries);
       }
+
+      const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+      const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
+      const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      let replyMessageText = replyMessages.join("");
+      if (notFoundStockList.length > 0) {
+        replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+      }
+      promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
+
+      flaggedCountryList.forEach((countryCode) => {
+        const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
+        const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
+        const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
+        const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+        if (flaggedReplyMessages.length > 0) {
+          promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+        }
+      });
     }
   }
   await Promise.all(promises);
@@ -270,8 +306,11 @@ exports.onText = async (ctx) => {
 exports.onEditedMessage = async (ctx) => {
   const promises = [];
   const message = ctx.update.edited_message;
+  const requesterId = message.from.id;
+  const requesterName = message.from.first_name;
   const groupId = message.chat.id;
   const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
+  let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
@@ -279,10 +318,28 @@ exports.onEditedMessage = async (ctx) => {
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
-      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-      if (replyMessages.length > 0) {
-        promises.push(ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true }));
+      if (await checkIfServiceActiveOnRegisteredGroup(groupId, "report_flagged_country")) {
+        flaggedCountryList = Object.keys(flaggedCountries);
       }
+
+      const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+      const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
+      const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      let replyMessageText = replyMessages.join("");
+      if (notFoundStockList.length > 0) {
+        replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+      }
+      promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
+
+      flaggedCountryList.forEach((countryCode) => {
+        const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
+        const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
+        const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
+        const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+        if (flaggedReplyMessages.length > 0) {
+          promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+        }
+      });
     }
   }
   await Promise.all(promises);

@@ -37,6 +37,11 @@ exports.registerOptions = [
   ],
   [
     {
+      action: "report_flagged_country",
+      name: "Report Filtered Country",
+      description: "Enable/Disable report filtered country ticker services",
+    },
+    {
       action: "all_services",
       name: "All Services",
       description: "Enable/Disable all available services",

@@ -221,6 +221,41 @@ exports.register = (bot) => {
     });
   });
 
+  /** *********************** Report Filtered Country Ticker ************************ */
+
+  bot.action("report_flagged_country", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Report Filtered Country Service");
+    const responseKeyboard = Markup.inlineKeyboard([
+      Markup.button.callback("Enable", "report_flagged_country_enable"),
+      Markup.button.callback("Disable", "report_flagged_country_disable"),
+    ]);
+    await ctx.editMessageText("Action for Report Filtered Country Service:", responseKeyboard);
+  });
+
+  bot.action("report_flagged_country_enable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Report Filtered Country Service Enable");
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
+    await orchestrator.enableService(message.chat.id, "report_flagged_country");
+    await ctx.editMessageText(`✅ Report Filtered Country Service - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
+  });
+
+  bot.action("report_flagged_country_disable", async (ctx) => {
+    functions.logger.info("Telegram Event: Action Report Filtered Country Service Disable");
+    const callbackQuery = ctx.update.callback_query;
+    const message = callbackQuery.message;
+    const requesterId = callbackQuery.from.id;
+    const requesterName = callbackQuery.from.first_name;
+    await orchestrator.disableService(message.chat.id, "report_flagged_country");
+    await ctx.editMessageText(`✅ Report Filtered Country Service - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
+      parse_mode: "Markdown",
+    });
+  });
+
   /** *********************** All Services ************************ */
 
   bot.action("all_services", async (ctx) => {
