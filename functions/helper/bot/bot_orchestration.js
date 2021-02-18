@@ -130,7 +130,7 @@ exports.commandQuote = async (ctx) => {
     if (await checkIfServiceActiveOnRegisteredGroup(message.chat.id, "report_flagged_country")) {
       flaggedCountryList = Object.keys(flaggedCountries);
     }
-    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase()));
     const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
     const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
     let replyMessageText = replyMessages.join("");
@@ -246,7 +246,7 @@ exports.commandWatch = async (ctx) => {
       promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.track, stockQuote.symbol));
     });
-    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase()));
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
     let replyMessageText = replyMessages.length > 0 ? "*Added to watchlist:*\n" + replyMessages.join(", ") + "\n\n" : "";
     if (notFoundStockList.length > 0) {
@@ -280,7 +280,9 @@ exports.onText = async (ctx) => {
         flaggedCountryList = Object.keys(flaggedCountries);
       }
 
-      const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+      const notFoundStockList = tickerSymbols.filter(
+        (symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase())
+      );
       const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
       const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       let replyMessageText = replyMessages.join("");
@@ -322,7 +324,9 @@ exports.onEditedMessage = async (ctx) => {
         flaggedCountryList = Object.keys(flaggedCountries);
       }
 
-      const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol).includes(symbol));
+      const notFoundStockList = tickerSymbols.filter(
+        (symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase())
+      );
       const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
       const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
       let replyMessageText = replyMessages.join("");
