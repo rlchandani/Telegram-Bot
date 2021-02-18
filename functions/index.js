@@ -168,8 +168,8 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
         { is_anonymous: false }
       );
     }
-    if (timeUtil.is6PM("America/Los_Angeles")) {
-      functions.logger.info("Sending 6PM reminder message");
+    if (timeUtil.is4PM("America/Los_Angeles")) {
+      functions.logger.info("Sending 4PM reminder message");
       await orchestrator.sendMessageToRegisteredGroups(
         bot,
         "scheduled_reminders",
