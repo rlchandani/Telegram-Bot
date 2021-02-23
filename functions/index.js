@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 "use strict";
 
 const functions = require("firebase-functions");
@@ -97,6 +98,32 @@ exports.debug = functions.https.onRequest(async (request, response) => {
       case "holidayEventsUSA":
         msg = "Holiday Events (USA) Sent, will be delivered if group is registered to holidaty events (USA) service";
         await orchestrator.usaHoliday(bot);
+        break;
+      case "backfillMentionedTickerNormalizedTable":
+        const days = [];
+        const currentDate = moment().tz("America/Los_Angeles");
+        const weekStart = currentDate.clone().startOf("isoWeek");
+        for (let i = 0; i <= 100; i++) {
+          const day = moment(weekStart).subtract(i, "days");
+          if (day.isBefore()) {
+            days.push(day.unix());
+          }
+        }
+        days.reverse();
+        functions.logger.log(JSON.stringify(days));
+        const groups = await orchestrator.getRegisteredGroups();
+        functions.logger.log(groups);
+        for (let i = 0; i < groups.length; i++) {
+          const group = groups[i];
+          for (let j = 0; j < days.length; j++) {
+            functions.logger.log(`Processing: ${days[j]}`);
+            const mentionedTickers = await orchestrator.getMentionedTickerByDayForGroup(group.id, days[j]);
+            for (const [key, value] of Object.entries(mentionedTickers)) {
+              functions.logger.log(`Processing: ${key}: ${JSON.stringify(value)}`);
+              await orchestrator.registerMentionedTickerNormalized(group.id, value.userId, value.symbol, value.price, value.day, value.createdOn);
+            }
+          }
+        }
         break;
       default:
         msg = "Action not defined";

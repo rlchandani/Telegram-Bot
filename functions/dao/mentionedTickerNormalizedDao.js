@@ -1,23 +1,30 @@
 "use strict";
 
 const functions = require("firebase-functions");
-const { firebaseMentionedTickerRef } = require("../helper/dbHelper");
+const { firebaseMentionedTickerNormalizedRef } = require("../helper/dbHelper");
 
 exports.add = async (groupId, userId, day, symbol, price, createdOn) => {
-  firebaseMentionedTickerRef.child(groupId).push({
-    day: day,
-    userId: userId,
-    symbol: symbol,
-    price: parseFloat(price),
-    createdOn: createdOn,
-  });
+  const snapshot = await this.get(groupId, symbol);
+  if (snapshot == null) {
+    await firebaseMentionedTickerNormalizedRef
+      .child(groupId)
+      .child(symbol)
+      .set({
+        day: day,
+        userId: userId,
+        symbol: symbol,
+        price: parseFloat(price),
+        createdOn: createdOn,
+      });
+    return true;
+  }
+  return false;
 };
 
-exports.getTickerByDayForGroup = async (groupId, day) => {
-  return await firebaseMentionedTickerRef
+exports.get = async (groupId, symbol) => {
+  return firebaseMentionedTickerNormalizedRef
     .child(groupId)
-    .orderByChild("day")
-    .equalTo(day)
+    .child(symbol)
     .once("value")
     .then((data) => {
       return data.val() !== null ? data.val() : null;
@@ -28,12 +35,11 @@ exports.getTickerByDayForGroup = async (groupId, day) => {
     });
 };
 
-exports.getTickerByDaysForGroup = async (groupId, days=[]) => {
-  const promises = days.map((day) => {
-    return firebaseMentionedTickerRef
+exports.getTickerBySybolsForGroup = async (groupId, symbols=[]) => {
+  const promises = symbols.map((symbol) => {
+    return firebaseMentionedTickerNormalizedRef
       .child(groupId)
-      .orderByChild("day")
-      .equalTo(day)
+      .child(symbol)
       .once("value")
       .then((data) => {
         return data.val() !== null ? data.val() : null;

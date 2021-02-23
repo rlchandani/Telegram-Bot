@@ -39,12 +39,14 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
         const stockQuote = data[key];
         if (!(stockQuote.symbol in responseTickerInfo)) {
           const stockQuoteNormalized = responseDataNormalized.filter((item) => item.symbol === stockQuote.symbol)[0];
-          responseTickerInfo[stockQuote.symbol] = {
-            symbol: stockQuote.symbol,
-            first_mentioned_price: parseFloat(stockQuoteNormalized.price).toFixed(2),
-            day: stockQuote.day,
-            first_mentioned_on: stockQuote.createdOn,
-          };
+          if (stockQuoteNormalized !== undefined) {
+            responseTickerInfo[stockQuote.symbol] = {
+              symbol: stockQuoteNormalized.symbol,
+              first_mentioned_price: parseFloat(stockQuoteNormalized.price).toFixed(2),
+              day: stockQuoteNormalized.day,
+              first_mentioned_on: stockQuoteNormalized.createdOn,
+            };
+          }
         }
       });
     });

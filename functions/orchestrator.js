@@ -36,6 +36,20 @@ exports.registerMentionedTicker = async (groupId, userId, tickerSymbol, tickerPr
   }
 };
 
+exports.getMentionedTickerByDayForGroup = async (groupId, day) => {
+  try {
+    const snapshot = await mentionedTickerDao.getTickerByDayForGroup(groupId, day);
+    if (snapshot !== null) {
+      return snapshot;
+    }
+    functions.logger.error(`No data found for day: ${day}.`);
+  } catch (err) {
+    functions.logger.error(`Failed to get data for day: ${day}.`, err);
+    throw err;
+  }
+  return {};
+};
+
 exports.getMentionedTickerByDaysForGroup = async (groupId, days) => {
   try {
     const snapshot = await mentionedTickerDao.getTickerByDaysForGroup(groupId, days);
@@ -507,7 +521,7 @@ const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overr
     .tz("America/Los_Angeles")
     .format("YYYY-MM-DD z");
   const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(group.id, period);
-  const messageText = topMentionedTickersByPerformance.slice(0, 5).map((item, index) => {
+  const messageText = topMentionedTickersByPerformance.slice(0, 10).map((item, index) => {
     return (
       `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
       `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
@@ -517,9 +531,7 @@ const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overr
   });
   const groupName = group.type == "group" ? group.title : group.first_name;
   const headerText =
-    `*Weekly Report:* ${groupName}\n` +
-    `*Period:* ${periodStart} - ${periodEnd}\n` +
-    "Performance of top 5 mentioned stocks this week:\n\n";
+    `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks by performance this week:\n\n";
   return bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
     parse_mode: "Markdown",
     disable_web_page_preview: true,
@@ -542,16 +554,14 @@ const _sendReportForTopMentionedByCountToGroups = async (bot, group, overrideGro
     .format("YYYY-MM-DD z");
   const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(group.id, period);
   const messageText = Object.keys(topMentionedTickerByCount)
-    .slice(0, 5)
+    .slice(0, 10)
     .map((symbol, index) => {
       const count = topMentionedTickerByCount[symbol];
       return `${count} - [${symbol}](https://robinhood.com/stocks/${symbol})`;
     });
   const groupName = group.type == "group" ? group.title : group.first_name;
   const headerText =
-    `*Weekly Report:* ${groupName}\n` +
-    `*Period:* ${periodStart} - ${periodEnd}\n` +
-    "Following stocks are being talked about in this week:\n\n";
+    `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks being talked about in this week:\n\n";
   return await bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
     parse_mode: "Markdown",
     disable_web_page_preview: true,
