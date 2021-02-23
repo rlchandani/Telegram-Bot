@@ -30,15 +30,18 @@ exports.getTopMentionedTickersByCount = async (groupId, days) => {
 
 exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
   const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);
+  const symbols = [...new Set(responseData.map((data) => Object.values(data).map((value) => value.symbol)))][0];
+  const responseDataNormalized = await orchestrator.getMentionedTickerNormalizedBySymbolsForGroup(groupId, symbols);
   const responseTickerInfo = {};
   responseData.forEach((data) => {
     Object.keys(data).forEach((key) => {
       Object.keys(data[key]).forEach((k) => {
         const stockQuote = data[key];
         if (!(stockQuote.symbol in responseTickerInfo)) {
+          const stockQuoteNormalized = responseDataNormalized.filter((item) => item.symbol === stockQuote.symbol)[0];
           responseTickerInfo[stockQuote.symbol] = {
             symbol: stockQuote.symbol,
-            first_mentioned_price: parseFloat(stockQuote.price).toFixed(2),
+            first_mentioned_price: parseFloat(stockQuoteNormalized.price).toFixed(2),
             day: stockQuote.day,
             first_mentioned_on: stockQuote.createdOn,
           };

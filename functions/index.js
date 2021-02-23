@@ -105,6 +105,21 @@ exports.debug = functions.https.onRequest(async (request, response) => {
   response.send(`Debugging API - ${msg}`);
 });
 
+/** **********************************  Database Trigger  ********************************** **/
+// Copy data from mentionedTicker table to mentionedTickerNormalzied table
+exports.mentionedTickerOnCreateTrigger = functions.database.ref("/mentionedTicker/{groupId}/{id}/").onCreate((snapshot, context) => {
+  // Grab the current value of what was written to the Realtime Database.
+  const original = snapshot.val();
+  return orchestrator.registerMentionedTickerNormalized(
+    context.params.groupId,
+    original.userId,
+    original.symbol,
+    original.price,
+    original.day,
+    original.createdOn
+  );
+});
+
 /** **********************************  Every Hour  ********************************** **/
 // GCP Scheduler: Run everyday at 0000 hours PST
 exports.everyHour = functions.pubsub

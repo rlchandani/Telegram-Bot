@@ -11,5 +11,6 @@ exports.firebaseRegisteredUsersRef = admin.database().ref("/registeredUser/");
 exports.firebasePollsRef = admin.database().ref("/poll/");
 exports.firebaseExpiringMessageRef = admin.database().ref("/expiringMessage/");
 exports.firebaseMentionedTickerRef = admin.database().ref("/mentionedTicker/");
+exports.firebaseMentionedTickerNormalizedRef = admin.database().ref("/mentionedTickerNormalized/");
 exports.firebaseWatchlistRef = admin.database().ref("/watchlist/");
 exports.firebasePaperTradeRef = admin.database().ref("/paperTrade/");

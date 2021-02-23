@@ -46,7 +46,10 @@ exports.currentWeekDays = (timezone = "America/Los_Angeles") => {
   const weekStart = currentDate.clone().startOf("isoWeek");
   // const weekEnd = currentDate.clone().endOf("isoWeek");
   for (let i = 0; i <= 6; i++) {
-    days.push(moment(weekStart).add(i, "days").unix());
+    const day = moment(weekStart).add(i, "days");
+    if (day.isBefore()) {
+      days.push(day.unix());
+    }
   }
   return days;
 };
