@@ -17,7 +17,12 @@ const {
   getRegisteredGroupServiceStatus,
   checkIfServiceActiveOnRegisteredGroup,
 } = require("../../orchestrator");
-const utils = require("../utils");
+const {
+  getLastTradedPrice,
+  mapTickerQuoteMessage,
+  extractTickerSymbolsFromQuoteCommand,
+  extractTickerSymbolsInsideMessageText,
+} = require("../utils");
 const timeUtil = require("../timeUtil");
 const messageAction = require("../../model/message_action");
 const { registerOptions } = require("../../model/register_action");
@@ -117,13 +122,20 @@ exports.commandQuote = async (ctx) => {
   const message = ctx.update.message;
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
-  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
+  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     const promises = [];
     stockListQuote.forEach((stockQuote) => {
-      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(
+        registerMentionedTicker(
+          message.chat.id,
+          message.from.id,
+          stockQuote.symbol,
+          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
+        )
+      );
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     await Promise.all(promises);
@@ -205,7 +217,7 @@ exports.commandSp500Down = async (ctx) => {
 exports.commandNews = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
+  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     tickerSymbols.forEach(async (tickerSymbol) => promises.push(_commandNews(ctx, tickerSymbol)));
   } else {
@@ -239,7 +251,7 @@ const _commandNews = async (ctx, tickerSymbol) => {
 exports.commandWatch = async (ctx) => {
   const promises = [];
   const message = ctx.update.message;
-  const tickerSymbols = utils.extractTickerSymbolsFromQuoteCommand(message.text);
+  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
@@ -267,12 +279,19 @@ exports.onText = async (ctx) => {
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
   const groupId = message.chat.id;
-  const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
+  const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
   let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(
+        registerMentionedTicker(
+          message.chat.id,
+          message.from.id,
+          stockQuote.symbol,
+          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
+        )
+      );
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
@@ -311,12 +330,19 @@ exports.onEditedMessage = async (ctx) => {
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
   const groupId = message.chat.id;
-  const tickerSymbols = utils.extractTickerSymbolsInsideMessageText(message.text);
+  const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
   let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
     const stockListQuote = await this.getStockListQuote(tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.symbol, stockQuote.last_trade_price));
+      promises.push(
+        registerMentionedTicker(
+          message.chat.id,
+          message.from.id,
+          stockQuote.symbol,
+          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
+        )
+      );
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
@@ -361,35 +387,6 @@ exports.onNewChatMembers = async (ctx) => {
     promises.push(registerUser(member.id, member, message.date));
   });
   await Promise.all(promises);
-};
-
-const mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
-  const tickerSymbol = stockQuote.symbol;
-  const tradedPrice = parseFloat(stockQuote.last_trade_price).toFixed(2);
-  const extendedTradedPrice = parseFloat(stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price).toFixed(2);
-  const previousTradedPrice = parseFloat(stockQuote.previous_close).toFixed(2);
-  const extendedPreviousTradedPrice = parseFloat(stockQuote.adjusted_previous_close || stockQuote.previous_close).toFixed(2);
-
-  const todayDiff = (tradedPrice - previousTradedPrice).toFixed(2);
-  const todayPL = ((todayDiff * 100) / previousTradedPrice).toFixed(2);
-  const todayIcon = utils.getPriceMovementIcon(todayPL);
-
-  const todayAfterHourDiff = (extendedTradedPrice - tradedPrice).toFixed(2);
-  const todayAfterHourDiffPL = ((todayAfterHourDiff * 100) / tradedPrice).toFixed(2);
-  const todayAfterHourDiffIcon = utils.getPriceMovementIcon(todayAfterHourDiffPL);
-
-  const total = (extendedTradedPrice - extendedPreviousTradedPrice).toFixed(2);
-  const totalPL = ((total * 100) / extendedPreviousTradedPrice).toFixed(2);
-  const totalIcon = utils.getPriceMovementIcon(totalPL);
-
-  const tickerText = hyperlink ? `[${tickerSymbol}](https://robinhood.com/stocks/${tickerSymbol})` : `${tickerSymbol}`;
-  return (
-    `*Ticker:* ${tickerText} ${stockQuote.country_flag} (${stockQuote.country})\n` +
-    `*Price:* $${extendedTradedPrice} ${totalIcon}\n` +
-    `*Today:* $${todayDiff} (${todayPL}%) ${todayIcon}\n` +
-    `*After Hours:* $${todayAfterHourDiff} (${todayAfterHourDiffPL}%) ${todayAfterHourDiffIcon}\n\n`
-    // `*Total P/L:* $${total} (${totalPL}%)`
-  );
 };
 
 /* exports.getStockListQuote = async (tickerSymbols) => {

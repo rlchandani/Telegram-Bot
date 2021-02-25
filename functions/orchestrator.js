@@ -10,7 +10,7 @@ const mentionedTickerDao = require("./dao/mentionedTickerDao");
 const mentionedTickerNormalizedDao = require("./dao/mentionedTickerNormalizedDao");
 const watchlistDao = require("./dao/watchlistDao");
 const calendar = require("./helper/google/calendar");
-const utils = require("./helper/utils");
+const { getPriceMovementIcon, getLastTradedPrice } = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
 const messageAction = require("./model/message_action");
@@ -452,7 +452,7 @@ exports.sendReportForWatchlistByPerformanceToGroups = async (bot, groupId) => {
         `*Sector:* ${item.sector}\n` +
         `*Added On:* \`\`\`${moment.unix(item.first_mentioned_on).format("YYYY-MM-DD")}\`\`\` ($${item.first_mentioned_price})\n` +
         `*Current Price:* \`\`\`$${item.last_trade_price}\`\`\`\n` +
-        `*Total P/L:* \`\`\`$${item.pl}\`\`\` (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
+        `*Total P/L:* \`\`\`$${item.pl}\`\`\` (${item.pl_percentage}%) ${getPriceMovementIcon(item.pl)}\n`
       );
     });
     if (messageText.length > 0) {
@@ -523,15 +523,17 @@ const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overr
   const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(group.id, period);
   const messageText = topMentionedTickersByPerformance.slice(0, 10).map((item, index) => {
     return (
-      `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol})\n` +
+      `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol}) ${item.country_flag} (${item.country})\n` +
+      `*Today Price:* $${getLastTradedPrice(item.last_trade_price, item.last_extended_hours_trade_price)} (${item.total_pl}%)` +
+      `${getPriceMovementIcon(item.total_pl)}\n` +
+      // `*Today:* $${item.today_diff} (${item.today_pl}%) ${getPriceMovementIcon(item.today_pl)}\n` +
+      // `*After Hours:* $${item.today_after_hour_diff} (${item.today_after_hour_pl}%) ${getPriceMovementIcon(item.today_after_hour_pl)}\n` +
       `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
-      `*Current Price:* $${item.last_trade_price}\n` +
-      `*Total P/L:* $${item.pl} (${item.pl_percentage}%) ${utils.getPriceMovementIcon(item.pl)}\n`
+      `*P/L:* $${item.first_mentioned_diff} (${item.first_mentioned_pl}%) ${getPriceMovementIcon(item.first_mentioned_pl)}\n`
     );
   });
   const groupName = group.type == "group" ? group.title : group.first_name;
-  const headerText =
-    `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks by performance this week:\n\n";
+  const headerText = `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks by performance this week:\n\n";
   return bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
     parse_mode: "Markdown",
     disable_web_page_preview: true,

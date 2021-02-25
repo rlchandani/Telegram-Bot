@@ -68,3 +68,43 @@ exports.isMarketOpenToday = async (RobinhoodWrapperClient) => {
     return values.filter((v) => v.is_open == true).length > 0;
   });
 };
+
+exports.roundToTwo = (num) => {
+  return +(Math.round(num + "e+2") + "e-2");
+};
+
+exports.getLastTradedPrice = (lastTradedPrice, lastExtendedHourTradedPrice) => {
+  if (lastExtendedHourTradedPrice > 0) {
+    return this.roundToTwo(lastExtendedHourTradedPrice);
+  }
+  return this.roundToTwo(lastTradedPrice);
+};
+
+exports.mapTickerQuoteMessage = (stockQuote, hyperlink = true) => {
+  const tickerSymbol = stockQuote.symbol;
+  const tradedPrice = this.roundToTwo(stockQuote.last_trade_price);
+  const extendedTradedPrice = this.roundToTwo(stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price);
+  const previousTradedPrice = this.roundToTwo(stockQuote.previous_close);
+  const extendedPreviousTradedPrice = this.roundToTwo(stockQuote.adjusted_previous_close || stockQuote.previous_close);
+
+  const todayDiff = this.roundToTwo(tradedPrice - previousTradedPrice);
+  const todayPL = this.roundToTwo((todayDiff * 100) / previousTradedPrice);
+  const todayIcon = this.getPriceMovementIcon(todayPL);
+
+  const todayAfterHourDiff = this.roundToTwo(extendedTradedPrice - tradedPrice);
+  const todayAfterHourDiffPL = this.roundToTwo((todayAfterHourDiff * 100) / tradedPrice);
+  const todayAfterHourDiffIcon = this.getPriceMovementIcon(todayAfterHourDiffPL);
+
+  const total = this.roundToTwo(extendedTradedPrice - extendedPreviousTradedPrice);
+  const totalPL = this.roundToTwo((total * 100) / extendedPreviousTradedPrice);
+  const totalIcon = this.getPriceMovementIcon(totalPL);
+
+  const tickerText = hyperlink ? `[${tickerSymbol}](https://robinhood.com/stocks/${tickerSymbol})` : `${tickerSymbol}`;
+  return (
+    `*Ticker:* ${tickerText} ${stockQuote.country_flag} (${stockQuote.country})\n` +
+    `*Price:* $${extendedTradedPrice} ${totalIcon}\n` +
+    `*Today:* $${todayDiff} (${todayPL}%) ${todayIcon}\n` +
+    `*After Hours:* $${todayAfterHourDiff} (${todayAfterHourDiffPL}%) ${todayAfterHourDiffIcon}\n\n`
+    // `*Total P/L:* $${total} (${totalPL}%)`
+  );
+};

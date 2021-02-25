@@ -4,6 +4,7 @@ const { firebaseConfig } = require("../helper/firebase_config");
 const countryCodeToFlag = require("country-code-to-flag");
 const RobinhoodWrapper = require("../helper/robinhood_wrapper");
 const orchestrator = require("../orchestrator");
+const { roundToTwo } = require("../helper/utils");
 const _ = require("lodash-contrib");
 
 const RobinhoodWrapperClient = new RobinhoodWrapper(
@@ -54,17 +55,44 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
   const stockQuotes = await this.getStockListQuote(Object.keys(responseTickerInfo));
   stockQuotes.forEach((stockQuote) => {
     const current = responseTickerInfo[stockQuote.symbol];
-    const pl = parseFloat(stockQuote.last_trade_price - current.first_mentioned_price).toFixed(2);
-    const plPercentage = parseFloat((pl * 100) / current.first_mentioned_price).toFixed(2);
-    const lastTradedPrice = parseFloat(stockQuote.last_trade_price).toFixed(2);
+
+    const tradedPrice = roundToTwo(stockQuote.last_trade_price);
+    const extendedTradedPrice = roundToTwo(stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price);
+    const previousTradedPrice = roundToTwo(stockQuote.previous_close);
+    const extendedPreviousTradedPrice = roundToTwo(stockQuote.adjusted_previous_close || stockQuote.previous_close);
+
+    const todayDiff = roundToTwo(tradedPrice - previousTradedPrice);
+    const todayPL = roundToTwo((todayDiff * 100) / previousTradedPrice);
+
+    const todayAfterHourDiff = roundToTwo(extendedTradedPrice - tradedPrice);
+    const todayAfterHourDiffPL = roundToTwo((todayAfterHourDiff * 100) / tradedPrice);
+
+    const totalDiff = roundToTwo(extendedTradedPrice - extendedPreviousTradedPrice);
+    const totalPL = roundToTwo((totalDiff * 100) / extendedPreviousTradedPrice);
+
+    const firstMentionedDiff = roundToTwo(extendedTradedPrice - current.first_mentioned_price);
+    const firstMentionedPL = roundToTwo((totalDiff * 100) / current.first_mentioned_price);
+
     current["country"] = stockQuote.country;
     current["country_flag"] = stockQuote.country_flag;
     current["sector"] = stockQuote.sector;
-    current["last_trade_price"] = parseFloat(lastTradedPrice);
-    current["pl"] = parseFloat(pl);
-    current["pl_percentage"] = parseFloat(plPercentage);
+    current["last_trade_price"] = tradedPrice;
+    current["last_extended_hours_trade_price"] = extendedTradedPrice;
+    current["today_diff"] = todayDiff;
+    current["today_pl"] = todayPL;
+    current["today_after_hour_diff"] = todayAfterHourDiff;
+    current["today_after_hour_pl"] = todayAfterHourDiffPL;
+    current["total_diff"] = totalDiff;
+    current["total_pl"] = totalPL;
+    current["first_mentioned_diff"] = firstMentionedDiff;
+    current["first_mentioned_pl"] = firstMentionedPL;
   });
-  return _.chain(responseTickerInfo).orderBy(["pl_percentage", "pl", "last_trade_price", "symbol"], ["desc", "desc", "desc", "asc"]).value();
+  return _.chain(responseTickerInfo)
+    .orderBy(
+      ["first_mentioned_pl", "total_pl", "last_extended_hours_trade_price", "last_trade_price", "symbol"],
+      ["desc", "desc", "desc", "desc", "asc"]
+    )
+    .value();
 };
 
 exports.getWatchlistTickersByPerformance = async (groupId) => {
