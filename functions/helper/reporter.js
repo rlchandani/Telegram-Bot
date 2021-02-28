@@ -14,9 +14,9 @@ const RobinhoodWrapperClient = new RobinhoodWrapper(
 );
 
 exports.getTopMentionedTickersByCount = async (groupId, days) => {
-  const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);
   const responseTickerInfo = {};
-  responseData.forEach((data) => {
+  const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);
+  responseData.forEach((data) =>
     Object.values(data).forEach((value) => {
       const tickerSymbol = value.symbol;
       if (tickerSymbol in responseTickerInfo) {
@@ -24,9 +24,18 @@ exports.getTopMentionedTickersByCount = async (groupId, days) => {
       } else {
         responseTickerInfo[tickerSymbol] = 1;
       }
-    });
+    })
+  );
+  const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, Object.keys(responseTickerInfo));
+  Object.keys(responseTickerInfo).forEach((symbol) => {
+    const stockQuote = stockListQuote.filter((item) => item.symbol == symbol)[0];
+    return stockQuote.setMentionedCount(responseTickerInfo[symbol]);
   });
-  return _.fromPairs(_.sortBy(_.toPairs(responseTickerInfo), 1).reverse());
+
+  return _.chain(stockListQuote)
+    .orderBy(["mentionedCount", "todayPL", "lastExtendedHoursTradePrice", "lastTradePrice", "symbol"], ["desc", "desc", "desc", "desc", "asc"])
+    .value();
+  // return _.fromPairs(_.sortBy(_.toPairs(responseTickerInfo), 1).reverse());
 };
 
 exports.getTopMentionedTickersByPerformance = async (groupId, days) => {

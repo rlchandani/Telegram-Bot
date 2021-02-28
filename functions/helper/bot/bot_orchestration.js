@@ -132,9 +132,9 @@ exports.commandQuote = async (ctx) => {
     const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
     const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.getCountry()));
     const replyMessages = filteredStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
-    let replyMessageText = replyMessages.join("");
+    let replyMessageText = replyMessages.join("\n");
     if (notFoundStockList.length > 0) {
-      replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+      replyMessageText += "\n*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
     if (replyMessageText) {
       const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
@@ -143,11 +143,11 @@ exports.commandQuote = async (ctx) => {
 
     flaggedCountryList.forEach((countryCode) => {
       const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
-      const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
+      const footer = `\nRequested by [${requesterName}](tg://user?id=${requesterId})`;
       const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
       const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (flaggedReplyMessages.length > 0) {
-        promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+        promises.push(ctx.reply(header + flaggedReplyMessages.join("\n") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
       }
     });
   } else {
@@ -284,9 +284,9 @@ exports.onText = async (ctx) => {
       const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
       const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.getCountry()));
       const replyMessages = filteredStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
-      let replyMessageText = replyMessages.join("");
+      let replyMessageText = replyMessages.join("\n");
       if (notFoundStockList.length > 0) {
-        replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+        replyMessageText += "\n*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
       }
       if (replyMessageText) {
         promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
@@ -294,11 +294,11 @@ exports.onText = async (ctx) => {
 
       flaggedCountryList.forEach((countryCode) => {
         const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
-        const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
+        const footer = `\nRequested by [${requesterName}](tg://user?id=${requesterId})`;
         const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
         const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
         if (flaggedReplyMessages.length > 0) {
-          promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+          promises.push(ctx.reply(header + flaggedReplyMessages.join("\n") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
         }
       });
     }

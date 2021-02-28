@@ -515,16 +515,31 @@ exports.sendReportForTopMentionedByPerformanceToGroups = async (bot, overrideGro
 
 const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overrideGroupId) => {
   const period = timeUtil.currentWeekDays("America/Los_Angeles");
-  const periodStart = moment.unix(period[0]).tz("America/Los_Angeles").format("YYYY-MM-DD");
+  const periodStart = moment.unix(period[0]).tz("America/Los_Angeles").format("MM/DD");
   const periodEnd = moment
     .unix(period[period.length - 1])
     .tz("America/Los_Angeles")
-    .format("YYYY-MM-DD z");
+    .format("MM/DD z");
   const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(group.id, period);
-  const messageText = topMentionedTickersByPerformance.slice(0, 10).map((item) => item.getFirstMentionedQuoteMessage());
-  const groupName = group.type == "group" ? group.title : group.first_name;
-  const headerText = `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks by performance this week:\n\n";
-  return bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
+  const pennyStockMessage = topMentionedTickersByPerformance
+    .filter((item) => item.tradePrice < 10)
+    .slice(0, 5)
+    .map((item) => item.getFirstMentionedQuoteMessage());
+  const mediumStockMessage = topMentionedTickersByPerformance
+    .filter((item) => item.tradePrice > 10 && item.tradePrice < 200)
+    .slice(0, 5)
+    .map((item) => item.getFirstMentionedQuoteMessage());
+  const premiumStockMessage = topMentionedTickersByPerformance
+    .filter((item) => item.tradePrice > 200)
+    .slice(0, 5)
+    .map((item) => item.getFirstMentionedQuoteMessage());
+  const messageText =
+    `\n*Penny-Stocks:*\n\`-----------------------\`\n${pennyStockMessage.length > 0 ? pennyStockMessage.join("\n") : "No Stocks"}` +
+    `\n*Medium-Stocks:*\n\`-----------------------\`\n${mediumStockMessage.length > 0 ? mediumStockMessage.join("\n") : "No Stocks"}` +
+    `\n*Premium-Stocks:*\n\`-----------------------\`\n${premiumStockMessage.length > 0 ? premiumStockMessage.join("\n") : "No Stocks"}`;
+  // const groupName = group.type == "group" ? group.title : group.first_name;
+  const headerText = `*Weekly Report By Performance*\n*Period:* ${periodStart} - ${periodEnd}\n`;
+  return await bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText, {
     parse_mode: "Markdown",
     disable_web_page_preview: true,
   });
@@ -539,22 +554,31 @@ exports.sendReportForTopMentionedByCountToGroups = async (bot, overrideGroupId) 
 
 const _sendReportForTopMentionedByCountToGroups = async (bot, group, overrideGroupId) => {
   const period = timeUtil.currentWeekDays("America/Los_Angeles");
-  const periodStart = moment.unix(period[0]).tz("America/Los_Angeles").format("YYYY-MM-DD");
+  const periodStart = moment.unix(period[0]).tz("America/Los_Angeles").format("MM/DD");
   const periodEnd = moment
     .unix(period[period.length - 1])
     .tz("America/Los_Angeles")
-    .format("YYYY-MM-DD z");
+    .format("MM/DD z");
   const topMentionedTickerByCount = await reporter.getTopMentionedTickersByCount(group.id, period);
-  const messageText = Object.keys(topMentionedTickerByCount)
-    .slice(0, 10)
-    .map((symbol, index) => {
-      const count = topMentionedTickerByCount[symbol];
-      return `${count} - [${symbol}](https://robinhood.com/stocks/${symbol})`;
-    });
-  const groupName = group.type == "group" ? group.title : group.first_name;
-  const headerText =
-    `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks being talked about in this week:\n\n";
-  return await bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {
+  const pennyStockMessage = topMentionedTickerByCount
+    .filter((item) => item.tradePrice < 10)
+    .slice(0, 5)
+    .map((item) => item.getStockQuoteMessage());
+  const mediumStockMessage = topMentionedTickerByCount
+    .filter((item) => item.tradePrice > 10 && item.tradePrice < 200)
+    .slice(0, 5)
+    .map((item) => item.getStockQuoteMessage());
+  const premiumStockMessage = topMentionedTickerByCount
+    .filter((item) => item.tradePrice > 200)
+    .slice(0, 5)
+    .map((item) => item.getStockQuoteMessage());
+  const messageText =
+    `\n*Penny-Stocks:*\n\`-----------------------\`\n${pennyStockMessage.length > 0 ? pennyStockMessage.join("\n") : "No Stocks"}` +
+    `\n*Medium-Stocks:*\n\`-----------------------\`\n${mediumStockMessage.length > 0 ? mediumStockMessage.join("\n") : "No Stocks"}` +
+    `\n*Premium-Stocks:*\n\`-----------------------\`\n${premiumStockMessage.length > 0 ? premiumStockMessage.join("\n") : "No Stocks"}`;
+  // const groupName = group.type == "group" ? group.title : group.first_name;
+  const headerText = `*Weekly Report By Count*\n*Period:* ${periodStart} - ${periodEnd}\n`;
+  return await bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText, {
     parse_mode: "Markdown",
     disable_web_page_preview: true,
   });

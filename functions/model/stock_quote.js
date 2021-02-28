@@ -49,11 +49,16 @@ class StockQuote {
     return this;
   };
 
+  setMentionedCount = (count) => {
+    this.mentionedCount = count;
+    return this;
+  };
+
   getFirstMentionedQuoteMessage = () => {
     return (
       `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})\n` +
       `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%) ${this.todayFullDayIcon}\n` +
-      `*First Mentioned:* ${moment.unix(this.firstMentionedTimestamp).format("YYYY-MM-DD")} ($${this.firstMentionedPrice})\n` +
+      `*Mentioned:* ${moment.unix(this.firstMentionedTimestamp).format("YYYY-MM-DD")} ($${this.firstMentionedPrice})\n` +
       `*P/L Since:* $${this.firstMentionedDiff} (${this.firstMentionedPL}%) ${this.firstMentionedIcon}\n`
     );
   };
@@ -63,7 +68,7 @@ class StockQuote {
       `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})\n` +
       `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%) ${this.todayFullDayIcon}\n` +
       `*Today:* $${this.todayDiff} (${this.todayPL}%) ${this.todayIcon}\n` +
-      `*After Hours:* $${this.todayAfterHourDiff} (${this.todayAfterHourPL}%) ${this.todayAfterHourIcon}\n\n`
+      `*After Hours:* $${this.todayAfterHourDiff} (${this.todayAfterHourPL}%) ${this.todayAfterHourIcon}\n`
       // `*Sector:* ${this.sector}\n\n`
       // `*Total P/L:* $${total} (${totalPL}%)`
     );
