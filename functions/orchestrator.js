@@ -10,7 +10,7 @@ const mentionedTickerDao = require("./dao/mentionedTickerDao");
 const mentionedTickerNormalizedDao = require("./dao/mentionedTickerNormalizedDao");
 const watchlistDao = require("./dao/watchlistDao");
 const calendar = require("./helper/google/calendar");
-const { getPriceMovementIcon, getLastTradedPrice } = require("./helper/utils");
+const { getPriceMovementIcon } = require("./helper/utils");
 const timeUtil = require("./helper/timeUtil");
 const reporter = require("./helper/reporter");
 const messageAction = require("./model/message_action");
@@ -91,7 +91,7 @@ exports.getMentionedTickerNormalizedBySymbolsForGroup = async (groupId, symbols)
 
 /** *********************** WatchlishDao orchestrator ************************ */
 
-exports.addToWatchlist = async (groupId, tickerSymbol, tickerPrice, userId) => {
+exports.addToWatchlist = async (groupId, userId, tickerSymbol, tickerPrice) => {
   try {
     await watchlistDao.add(groupId, tickerSymbol, tickerPrice, userId, moment().tz("America/Los_Angeles").unix());
     functions.logger.info(`Ticker ${tickerSymbol} added to watchlist for groupId: ${groupId} by userId: ${userId}`);
@@ -521,17 +521,7 @@ const _sendReportForTopMentionedByPerformanceToGroups = async (bot, group, overr
     .tz("America/Los_Angeles")
     .format("YYYY-MM-DD z");
   const topMentionedTickersByPerformance = await reporter.getTopMentionedTickersByPerformance(group.id, period);
-  const messageText = topMentionedTickersByPerformance.slice(0, 10).map((item, index) => {
-    return (
-      `*Ticker:* [${item.symbol}](https://robinhood.com/stocks/${item.symbol}) ${item.country_flag} (${item.country})\n` +
-      `*Today Price:* $${getLastTradedPrice(item.last_trade_price, item.last_extended_hours_trade_price)} (${item.total_pl}%)` +
-      `${getPriceMovementIcon(item.total_pl)}\n` +
-      // `*Today:* $${item.today_diff} (${item.today_pl}%) ${getPriceMovementIcon(item.today_pl)}\n` +
-      // `*After Hours:* $${item.today_after_hour_diff} (${item.today_after_hour_pl}%) ${getPriceMovementIcon(item.today_after_hour_pl)}\n` +
-      `*First Mentioned:* ${moment.unix(item.day).format("YYYY-MM-DD")} ($${item.first_mentioned_price})\n` +
-      `*P/L:* $${item.first_mentioned_diff} (${item.first_mentioned_pl}%) ${getPriceMovementIcon(item.first_mentioned_pl)}\n`
-    );
-  });
+  const messageText = topMentionedTickersByPerformance.slice(0, 10).map((item) => item.getFirstMentionedQuoteMessage());
   const groupName = group.type == "group" ? group.title : group.first_name;
   const headerText = `*Weekly Report:* ${groupName}\n` + `*Period:* ${periodStart} - ${periodEnd}\n` + "Top 10 stocks by performance this week:\n\n";
   return bot.telegram.sendMessage(overrideGroupId || group.id, headerText + messageText.join("\n"), {

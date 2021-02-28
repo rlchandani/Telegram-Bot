@@ -17,18 +17,12 @@ const {
   getRegisteredGroupServiceStatus,
   checkIfServiceActiveOnRegisteredGroup,
 } = require("../../orchestrator");
-const {
-  getLastTradedPrice,
-  mapTickerQuoteMessage,
-  extractTickerSymbolsFromQuoteCommand,
-  extractTickerSymbolsInsideMessageText,
-} = require("../utils");
+const { extractTickerSymbolsFromQuoteCommand, extractTickerSymbolsInsideMessageText } = require("../utils");
+const { getStockListQuote } = require("../robinhood_helper");
 const timeUtil = require("../timeUtil");
-const messageAction = require("../../model/message_action");
+const { DELETE } = require("../../model/message_action");
 const { registerOptions } = require("../../model/register_action");
-const countryCodeToFlag = require("country-code-to-flag");
 const { flaggedCountries } = require("../constant");
-const _ = require("lodash-contrib");
 
 const RobinhoodWrapperClient = new RobinhoodWrapper(
   firebaseConfig.robinhood.username,
@@ -46,7 +40,7 @@ exports.commandStatus = async (ctx) => {
   await ctx.reply("*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
     parse_mode: "Markdown",
   });
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandRegister = async (ctx) => {
@@ -81,7 +75,7 @@ exports.commandRegister = async (ctx) => {
       }
     );
   }
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandDeRegister = async (ctx) => {
@@ -115,7 +109,7 @@ exports.commandDeRegister = async (ctx) => {
       { parse_mode: "Markdown" }
     );
   }
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandQuote = async (ctx) => {
@@ -125,47 +119,42 @@ exports.commandQuote = async (ctx) => {
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
-    const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
     const promises = [];
     stockListQuote.forEach((stockQuote) => {
-      promises.push(
-        registerMentionedTicker(
-          message.chat.id,
-          message.from.id,
-          stockQuote.symbol,
-          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
-        )
-      );
-      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.getSymbol(), stockQuote.getTradePrice()));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.getSymbol()));
     });
     await Promise.all(promises);
     if (await checkIfServiceActiveOnRegisteredGroup(message.chat.id, "report_flagged_country")) {
       flaggedCountryList = Object.keys(flaggedCountries);
     }
-    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase()));
-    const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
-    const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
+    const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.getCountry()));
+    const replyMessages = filteredStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
     let replyMessageText = replyMessages.join("");
     if (notFoundStockList.length > 0) {
       replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
-    const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    if (replyMessageText) {
+      const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+    }
 
     flaggedCountryList.forEach((countryCode) => {
       const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
       const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
-      const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
-      const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
+      const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (flaggedReplyMessages.length > 0) {
         promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
       }
     });
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
   }
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandSp500Up = async (ctx) => {
@@ -175,20 +164,20 @@ exports.commandSp500Up = async (ctx) => {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
     if (tickerSymbols.length > 0) {
-      const stockListQuote = await this.getStockListQuote(tickerSymbols);
-      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
+      const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
         const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
-        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
       }
     }
   } else {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
   }
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandSp500Down = async (ctx) => {
@@ -198,20 +187,20 @@ exports.commandSp500Down = async (ctx) => {
     const results = response.results;
     const tickerSymbols = results.map((s) => s.symbol);
     if (tickerSymbols.length > 0) {
-      const stockListQuote = await this.getStockListQuote(tickerSymbols);
-      const replyMessages = stockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
+      const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
         const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
-        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
       }
     }
   } else {
     const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime", {
       parse_mode: "Markdown",
     });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
   }
-  await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
 exports.commandNews = async (ctx) => {
@@ -222,9 +211,9 @@ exports.commandNews = async (ctx) => {
     tickerSymbols.forEach(async (tickerSymbol) => promises.push(_commandNews(ctx, tickerSymbol)));
   } else {
     const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", { parse_mode: "Markdown" });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
   }
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
 };
 
@@ -237,14 +226,14 @@ const _commandNews = async (ctx, tickerSymbol) => {
         parse_mode: "Markdown",
         disable_web_page_preview: true,
       });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
     } else {
       const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
     }
   } else {
     const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
   }
 };
 
@@ -253,119 +242,61 @@ exports.commandWatch = async (ctx) => {
   const message = ctx.update.message;
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   if (tickerSymbols.length > 0) {
-    const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      promises.push(addToWatchlist(message.chat.id, stockQuote.symbol, stockQuote.last_trade_price, message.from.id));
+      promises.push(addToWatchlist(message.chat.id, message.from.id, stockQuote.getSymbol(), stockQuote.getTradePrice()));
       promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.track, stockQuote.symbol));
     });
-    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase()));
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
     const replyMessages = stockListQuote.map((stockQuote) => `[${stockQuote.symbol}](https://robinhood.com/stocks/${stockQuote.symbol})`);
     let replyMessageText = replyMessages.length > 0 ? "*Added to watchlist:*\n" + replyMessages.join(", ") + "\n\n" : "";
     if (notFoundStockList.length > 0) {
       replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
     const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
   }
-  promises.push(registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours()));
+  promises.push(registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
 };
 
 exports.onText = async (ctx) => {
   const promises = [];
-  const message = ctx.update.message;
+  const message = ctx.update.message || ctx.update.edited_message;
   const requesterId = message.from.id;
   const requesterName = message.from.first_name;
   const groupId = message.chat.id;
   const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
   let flaggedCountryList = [];
   if (tickerSymbols.length > 0) {
-    const stockListQuote = await this.getStockListQuote(tickerSymbols);
+    const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
     stockListQuote.forEach((stockQuote) => {
-      promises.push(
-        registerMentionedTicker(
-          message.chat.id,
-          message.from.id,
-          stockQuote.symbol,
-          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
-        )
-      );
-      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.getSymbol(), stockQuote.getTradePrice()));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.getSymbol()));
     });
     if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
       if (await checkIfServiceActiveOnRegisteredGroup(groupId, "report_flagged_country")) {
         flaggedCountryList = Object.keys(flaggedCountries);
       }
 
-      const notFoundStockList = tickerSymbols.filter(
-        (symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase())
-      );
-      const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
-      const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+      const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
+      const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.getCountry()));
+      const replyMessages = filteredStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       let replyMessageText = replyMessages.join("");
       if (notFoundStockList.length > 0) {
         replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
       }
-      promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
+      if (replyMessageText) {
+        promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
+      }
 
       flaggedCountryList.forEach((countryCode) => {
         const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
         const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
-        const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
-        const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-        if (flaggedReplyMessages.length > 0) {
-          promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
-        }
-      });
-    }
-  }
-  await Promise.all(promises);
-};
-
-exports.onEditedMessage = async (ctx) => {
-  const promises = [];
-  const message = ctx.update.edited_message;
-  const requesterId = message.from.id;
-  const requesterName = message.from.first_name;
-  const groupId = message.chat.id;
-  const tickerSymbols = extractTickerSymbolsInsideMessageText(message.text);
-  let flaggedCountryList = [];
-  if (tickerSymbols.length > 0) {
-    const stockListQuote = await this.getStockListQuote(tickerSymbols);
-    stockListQuote.forEach((stockQuote) => {
-      promises.push(
-        registerMentionedTicker(
-          message.chat.id,
-          message.from.id,
-          stockQuote.symbol,
-          getLastTradedPrice(stockQuote.last_trade_price, stockQuote.last_extended_hours_trade_price)
-        )
-      );
-      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.symbol));
-    });
-    if (await checkIfServiceActiveOnRegisteredGroup(groupId, "automated_quotes")) {
-      if (await checkIfServiceActiveOnRegisteredGroup(groupId, "report_flagged_country")) {
-        flaggedCountryList = Object.keys(flaggedCountries);
-      }
-
-      const notFoundStockList = tickerSymbols.filter(
-        (symbol) => !stockListQuote.map((slq) => slq.symbol.toUpperCase()).includes(symbol.toUpperCase())
-      );
-      const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.country));
-      const replyMessages = filteredStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
-      let replyMessageText = replyMessages.join("");
-      if (notFoundStockList.length > 0) {
-        replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
-      }
-      promises.push(ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
-
-      flaggedCountryList.forEach((countryCode) => {
-        const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
-        const footer = `Requested by [${requesterName}](tg://user?id=${requesterId})`;
-        const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.country === countryCode);
-        const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => mapTickerQuoteMessage(stockQuote));
+        const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
+        const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
         if (flaggedReplyMessages.length > 0) {
           promises.push(ctx.reply(header + flaggedReplyMessages.join("") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
         }
@@ -387,56 +318,6 @@ exports.onNewChatMembers = async (ctx) => {
     promises.push(registerUser(member.id, member, message.date));
   });
   await Promise.all(promises);
-};
-
-/* exports.getStockListQuote = async (tickerSymbols) => {
-  const response = await RobinhoodWrapperClient.getQuote(tickerSymbols);
-  if ("results" in response) {
-    const stockQuote = response.results;
-    const filteredStockQuote = await Promise.all(
-      stockQuote
-        .filter((s) => s != null)
-        .map(async (stockQuote) => {
-          return new Promise((resolve, reject) => {
-            RobinhoodWrapperClient.getUrl(stockQuote.instrument).then((instrumentDocument) => {
-              stockQuote["country"] = instrumentDocument.country;
-              stockQuote["country_flag"] = countryCodeToFlag(instrumentDocument.country);
-              resolve(stockQuote);
-            });
-          });
-        })
-    );
-    return filteredStockQuote;
-  }
-  return [];
-}; */
-
-exports.getStockListQuote = (tickerSymbols) => {
-  if (_.isEmpty(tickerSymbols)) {
-    return [];
-  }
-  return new Promise((resolve, reject) => {
-    RobinhoodWrapperClient.getQuote(tickerSymbols).then((stockQuoteResponse) => {
-      if ("results" in stockQuoteResponse) {
-        const stockQuotes = Promise.all(
-          stockQuoteResponse.results
-            .filter((s) => s != null)
-            .map((stockQuote) => {
-              return new Promise((resolve, reject) => {
-                RobinhoodWrapperClient.getUrl(stockQuote.instrument).then((instrumentDocument) => {
-                  stockQuote["country"] = instrumentDocument.country;
-                  stockQuote["country_flag"] = countryCodeToFlag(instrumentDocument.country);
-                  return resolve(stockQuote);
-                });
-              });
-            })
-        );
-        resolve(stockQuotes);
-      } else {
-        resolve([]);
-      }
-    });
-  });
 };
 
 exports.commandCreatePoll = async (ctx) => {

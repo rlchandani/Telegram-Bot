@@ -13,6 +13,7 @@ exports.add = async (groupId, groupInfo, requestedBy, date, enabled) => {
     snapshot.all_members_are_administrators != groupInfo.all_members_are_administrators
   ) {
     groupInfo["enabled"] = false;
+    groupInfo["service"] = snapshot != null ? snapshot.service : null;
     groupInfo["requested_by"] = requestedBy;
     groupInfo["created_at"] = snapshot != null ? snapshot.created_at : date;
     groupInfo["updated_at"] = date;

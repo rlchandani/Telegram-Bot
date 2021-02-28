@@ -4,7 +4,7 @@ const { firebaseConfig } = require("../helper/firebase_config");
 const countryCodeToFlag = require("country-code-to-flag");
 const RobinhoodWrapper = require("../helper/robinhood_wrapper");
 const orchestrator = require("../orchestrator");
-const { roundToTwo } = require("../helper/utils");
+const { getStockListQuote } = require("../helper/robinhood_helper");
 const _ = require("lodash-contrib");
 
 const RobinhoodWrapperClient = new RobinhoodWrapper(
@@ -30,68 +30,24 @@ exports.getTopMentionedTickersByCount = async (groupId, days) => {
 };
 
 exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
+  const symbols = [];
   const responseData = await orchestrator.getMentionedTickerByDaysForGroup(groupId, days);
-  const symbols = [...new Set(responseData.map((data) => Object.values(data).map((value) => value.symbol)))][0];
+  responseData.forEach((data) =>
+    Object.values(data).forEach((value) => {
+      if (!symbols.includes(value.symbol)) {
+        symbols.push(value.symbol);
+      }
+    })
+  );
   const responseDataNormalized = await orchestrator.getMentionedTickerNormalizedBySymbolsForGroup(groupId, symbols);
-  const responseTickerInfo = {};
-  responseData.forEach((data) => {
-    Object.keys(data).forEach((key) => {
-      Object.keys(data[key]).forEach((k) => {
-        const stockQuote = data[key];
-        if (!(stockQuote.symbol in responseTickerInfo)) {
-          const stockQuoteNormalized = responseDataNormalized.filter((item) => item.symbol === stockQuote.symbol)[0];
-          if (stockQuoteNormalized !== undefined) {
-            responseTickerInfo[stockQuote.symbol] = {
-              symbol: stockQuoteNormalized.symbol,
-              first_mentioned_price: parseFloat(stockQuoteNormalized.price).toFixed(2),
-              day: stockQuoteNormalized.day,
-              first_mentioned_on: stockQuoteNormalized.createdOn,
-            };
-          }
-        }
-      });
-    });
-  });
-  const stockQuotes = await this.getStockListQuote(Object.keys(responseTickerInfo));
-  stockQuotes.forEach((stockQuote) => {
-    const current = responseTickerInfo[stockQuote.symbol];
-
-    const tradedPrice = roundToTwo(stockQuote.last_trade_price);
-    const extendedTradedPrice = roundToTwo(stockQuote.last_extended_hours_trade_price || stockQuote.last_trade_price);
-    const previousTradedPrice = roundToTwo(stockQuote.previous_close);
-    const extendedPreviousTradedPrice = roundToTwo(stockQuote.adjusted_previous_close || stockQuote.previous_close);
-
-    const todayDiff = roundToTwo(tradedPrice - previousTradedPrice);
-    const todayPL = roundToTwo((todayDiff * 100) / previousTradedPrice);
-
-    const todayAfterHourDiff = roundToTwo(extendedTradedPrice - tradedPrice);
-    const todayAfterHourDiffPL = roundToTwo((todayAfterHourDiff * 100) / tradedPrice);
-
-    const totalDiff = roundToTwo(extendedTradedPrice - extendedPreviousTradedPrice);
-    const totalPL = roundToTwo((totalDiff * 100) / extendedPreviousTradedPrice);
-
-    const firstMentionedDiff = roundToTwo(extendedTradedPrice - current.first_mentioned_price);
-    const firstMentionedPL = roundToTwo((totalDiff * 100) / current.first_mentioned_price);
-
-    current["country"] = stockQuote.country;
-    current["country_flag"] = stockQuote.country_flag;
-    current["sector"] = stockQuote.sector;
-    current["last_trade_price"] = tradedPrice;
-    current["last_extended_hours_trade_price"] = extendedTradedPrice;
-    current["today_diff"] = todayDiff;
-    current["today_pl"] = todayPL;
-    current["today_after_hour_diff"] = todayAfterHourDiff;
-    current["today_after_hour_pl"] = todayAfterHourDiffPL;
-    current["total_diff"] = totalDiff;
-    current["total_pl"] = totalPL;
-    current["first_mentioned_diff"] = firstMentionedDiff;
-    current["first_mentioned_pl"] = firstMentionedPL;
+  const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, symbols);
+  const responseTickerInfo = symbols.map((symbol) => {
+    const stockQuote = stockListQuote.filter((item) => item.symbol == symbol)[0];
+    const stockQuoteNormalized = responseDataNormalized.filter((item) => item.symbol === symbol)[0];
+    return stockQuote.setFirstMentioned(stockQuoteNormalized.price, stockQuoteNormalized.createdOn);
   });
   return _.chain(responseTickerInfo)
-    .orderBy(
-      ["first_mentioned_pl", "total_pl", "last_extended_hours_trade_price", "last_trade_price", "symbol"],
-      ["desc", "desc", "desc", "desc", "asc"]
-    )
+    .orderBy(["firstMentionedPL", "todayPL", "lastExtendedHoursTradePrice", "lastTradePrice", "symbol"], ["desc", "desc", "desc", "desc", "asc"])
     .value();
 };
 
