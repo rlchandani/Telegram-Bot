@@ -17,7 +17,7 @@ class StockQuote {
     this.todayPL = roundToTwo((this.todayDiff * 100) / previousClose);
     this.todayIcon = getPriceMovementIcon(this.todayPL);
 
-    this.todayAfterHourDiff = roundToTwo(lastExtendedHoursTradePrice - lastTradePrice);
+    this.todayAfterHourDiff = roundToTwo(this.tradePrice - lastTradePrice);
     this.todayAfterHourPL = roundToTwo((this.todayAfterHourDiff * 100) / lastTradePrice);
     this.todayAfterHourIcon = getPriceMovementIcon(this.todayAfterHourPL);
 
