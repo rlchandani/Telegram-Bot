@@ -38,8 +38,10 @@ exports.register = (bot) => {
     functions.logger.info("Telegram Event: Help");
     const message = ctx.update.message;
     const commands = await ctx.getMyCommands();
+    const header = "You can control me by sending these commands:\n\n";
+    const footer = "\n\n*Legends for ticker quotes:*\n🥇 - Large Cap\n🥈 - Mid Cap\n🥉 - Small Cap\n🥉🥉 - Tiny Cap\n";
     const info = commands.reduce((acc, val) => `${acc}/${val.command} - ${val.description}\n`, "");
-    const replyMessage = await ctx.reply("You can control me by sending these commands:\n\n" + info);
+    const replyMessage = await ctx.reply(header + info + footer, { parse_mode: "Markdown" });
     await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
     await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
   });

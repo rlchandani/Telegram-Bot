@@ -167,7 +167,7 @@ exports.commandSp500Up = async (ctx) => {
       const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+        const replyMessage = await ctx.reply(replyMessages.join("\n"), { parse_mode: "Markdown", disable_web_page_preview: true });
         await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
       }
     }
@@ -190,7 +190,7 @@ exports.commandSp500Down = async (ctx) => {
       const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join(""), { parse_mode: "Markdown", disable_web_page_preview: true });
+        const replyMessage = await ctx.reply(replyMessages.join("\n"), { parse_mode: "Markdown", disable_web_page_preview: true });
         await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
       }
     }

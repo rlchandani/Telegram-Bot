@@ -32,6 +32,10 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols) => {
               return new Promise((resolve, reject) => {
                 RobinhoodWrapperClient.getFundamentals(stockQuoteBuilder.symbol).then((fundamental) => {
                   stockQuoteBuilder.setSector(fundamental.sector);
+                  stockQuoteBuilder.setIndustry(fundamental.industry);
+                  stockQuoteBuilder.setMarketCap(fundamental.market_cap);
+                  stockQuoteBuilder.setHigh52Week(fundamental.high_52_weeks);
+                  stockQuoteBuilder.setLow52Week(fundamental.low_52_weeks);
                   resolve(stockQuoteBuilder.build());
                 });
               });

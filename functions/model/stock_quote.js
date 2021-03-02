@@ -3,7 +3,19 @@ const { roundToTwo, getPriceMovementIcon, getLastTradedPrice } = require("../hel
 const moment = require("moment-timezone");
 
 class StockQuote {
-  constructor(symbol, lastTradePrice, lastExtendedHoursTradePrice, previousClose, country, countryFlag, sector) {
+  constructor(
+    symbol,
+    lastTradePrice,
+    lastExtendedHoursTradePrice,
+    previousClose,
+    country,
+    countryFlag,
+    sector,
+    industry,
+    marketCap,
+    high52Week,
+    low52Week
+  ) {
     this.symbol = symbol.toUpperCase();
     this.tickerText = `[${this.symbol}](https://robinhood.com/stocks/${this.symbol})`;
 
@@ -29,6 +41,24 @@ class StockQuote {
     this.countryFlag = countryFlag;
 
     this.sector = sector;
+    this.industry = industry;
+    this.marketCap = marketCap;
+    this.high52Week = high52Week;
+    this.low52Week = low52Week;
+
+    if (marketCap > 250000000 && marketCap < 2000000000) {
+      this.marketCapSize = "Small-Cap";
+      this.marketCapIcon = "🥉";
+    } else if (marketCap > 2000000000 && marketCap < 10000000000) {
+      this.marketCapSize = "Mid-Cap";
+      this.marketCapIcon = "🥈";
+    } else if (marketCap > 10000000000) {
+      this.marketCapSize = "Large-Cap";
+      this.marketCapIcon = "🥇";
+    } else {
+      this.marketCapSize = "Tiny-Cap";
+      this.marketCapIcon = "🥉🥉";
+    }
   }
 
   getSymbol = () => this.symbol;
@@ -39,6 +69,12 @@ class StockQuote {
   getCountry = () => this.country;
   getCountryFlag = () => this.countryFlag;
   getSector = () => this.sector;
+  getIndustry = () => this.industry;
+  getMarketCap = () => this.marketCap;
+  getMarketCapSize = () => this.marketCapSize;
+  getMarketCapIcon = () => this.marketCapIcon;
+  getHigh52Week = () => this.high52Week;
+  getLow52Week = () => this.low52Week;
 
   setFirstMentioned = (firstMentionedPrice, firstMentionedTimestamp) => {
     this.firstMentionedPrice = roundToTwo(firstMentionedPrice);
@@ -56,19 +92,19 @@ class StockQuote {
 
   getFirstMentionedQuoteMessage = () => {
     return (
-      `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})\n` +
-      `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%) ${this.todayFullDayIcon}\n` +
+      `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})${this.marketCapIcon}\n` +
+      `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%)${this.todayFullDayIcon}\n` +
       `*Mentioned:* ${moment.unix(this.firstMentionedTimestamp).format("YYYY-MM-DD")} ($${this.firstMentionedPrice})\n` +
-      `*P/L Since:* $${this.firstMentionedDiff} (${this.firstMentionedPL}%) ${this.firstMentionedIcon}\n`
+      `*P/L Since:* $${this.firstMentionedDiff} (${this.firstMentionedPL}%)${this.firstMentionedIcon}\n`
     );
   };
 
   getStockQuoteMessage = () => {
     return (
-      `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})\n` +
-      `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%) ${this.todayFullDayIcon}\n` +
-      `*Today:* $${this.todayDiff} (${this.todayPL}%) ${this.todayIcon}\n` +
-      `*After Hours:* $${this.todayAfterHourDiff} (${this.todayAfterHourPL}%) ${this.todayAfterHourIcon}\n`
+      `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})${this.marketCapIcon}\n` +
+      `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%)${this.todayFullDayIcon}\n` +
+      `*Today:* $${this.todayDiff} (${this.todayPL}%)${this.todayIcon}\n` +
+      `*After Hours:* $${this.todayAfterHourDiff} (${this.todayAfterHourPL}%)${this.todayAfterHourIcon}\n`
       // `*Sector:* ${this.sector}\n\n`
       // `*Total P/L:* $${total} (${totalPL}%)`
     );
@@ -118,6 +154,26 @@ class StockQuoteBuilder {
     return this;
   };
 
+  setIndustry = (industry) => {
+    this.industry = industry;
+    return this;
+  };
+
+  setMarketCap = (marketCap) => {
+    this.marketCap = marketCap;
+    return this;
+  };
+
+  setHigh52Week = (high52Week) => {
+    this.high52Week = high52Week;
+    return this;
+  };
+
+  setLow52Week = (low52Week) => {
+    this.low52Week = low52Week;
+    return this;
+  };
+
   build = () => {
     return new StockQuote(
       this.symbol,
@@ -126,7 +182,11 @@ class StockQuoteBuilder {
       this.previousClose,
       this.country,
       this.countryFlag,
-      this.sector
+      this.sector,
+      this.industry,
+      this.marketCap,
+      this.high52Week,
+      this.low52Week
     );
   };
 }
