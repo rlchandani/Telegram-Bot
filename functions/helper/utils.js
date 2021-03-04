@@ -50,10 +50,10 @@ exports.extractHashTag = (message, entities) => {
 
 exports.getPriceMovementIcon = (price) => {
   if (price < 0) {
-    return "🔻";
+    return "💔";
   }
   if (price > 0) {
-    return "🔺";
+    return "💚";
   }
   return "";
 };
