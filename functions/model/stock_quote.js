@@ -21,7 +21,8 @@ class StockQuote {
 
     this.lastTradePrice = roundToTwo(lastTradePrice);
     this.lastExtendedHoursTradePrice = roundToTwo(lastExtendedHoursTradePrice);
-    this.tradePrice = getLastTradedPrice(lastTradePrice, lastExtendedHoursTradePrice);
+    this._tradePrice = getLastTradedPrice(lastTradePrice, lastExtendedHoursTradePrice); // Bugfix: Handle tradePrice > $1000
+    this.tradePrice = roundToTwo(this._tradePrice);
 
     this.previousClose = roundToTwo(previousClose);
 
@@ -29,11 +30,11 @@ class StockQuote {
     this.todayPL = roundToTwo((this.todayDiff * 100) / previousClose);
     this.todayIcon = getPriceMovementIcon(this.todayPL);
 
-    this.todayAfterHourDiff = roundToTwo(this.tradePrice - lastTradePrice);
+    this.todayAfterHourDiff = roundToTwo(this._tradePrice - lastTradePrice);
     this.todayAfterHourPL = roundToTwo((this.todayAfterHourDiff * 100) / lastTradePrice);
     this.todayAfterHourIcon = getPriceMovementIcon(this.todayAfterHourPL);
 
-    this.todayFullDayDiff = roundToTwo(this.tradePrice - previousClose);
+    this.todayFullDayDiff = roundToTwo(this._tradePrice - previousClose);
     this.todayFullDayPL = roundToTwo((this.todayFullDayDiff * 100) / previousClose);
     this.todayFullDayIcon = getPriceMovementIcon(this.todayFullDayPL);
 
@@ -79,7 +80,7 @@ class StockQuote {
   setFirstMentioned = (firstMentionedPrice, firstMentionedTimestamp) => {
     this.firstMentionedPrice = roundToTwo(firstMentionedPrice);
     this.firstMentionedTimestamp = firstMentionedTimestamp;
-    this.firstMentionedDiff = roundToTwo(this.tradePrice - this.firstMentionedPrice);
+    this.firstMentionedDiff = roundToTwo(this._tradePrice - this.firstMentionedPrice);
     this.firstMentionedPL = roundToTwo((this.firstMentionedDiff * 100) / this.firstMentionedPrice);
     this.firstMentionedIcon = getPriceMovementIcon(this.firstMentionedPL);
     return this;

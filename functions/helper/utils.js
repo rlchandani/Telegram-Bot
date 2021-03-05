@@ -78,7 +78,7 @@ exports.roundToTwo = (num) => {
 
 exports.getLastTradedPrice = (lastTradedPrice, lastExtendedHourTradedPrice) => {
   if (lastExtendedHourTradedPrice > 0) {
-    return this.roundToTwo(lastExtendedHourTradedPrice);
+    return lastExtendedHourTradedPrice;
   }
-  return this.roundToTwo(lastTradedPrice);
+  return lastTradedPrice;
 };
