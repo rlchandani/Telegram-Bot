@@ -157,6 +157,51 @@ exports.commandQuote = async (ctx) => {
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
+exports.commandVsSPY = async (ctx) => {
+  const message = ctx.update.message;
+  const requesterId = message.from.id;
+  const requesterName = message.from.first_name;
+  const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
+  let flaggedCountryList = [];
+  if (tickerSymbols.length > 0) {
+    const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols, true);
+    const promises = [];
+    stockListQuote.forEach((stockQuote) => {
+      promises.push(registerMentionedTicker(message.chat.id, message.from.id, stockQuote.getSymbol(), stockQuote.getTradePrice()));
+      promises.push(RobinhoodWrapperClient.addToWatchlist(firebaseConfig.watchlist.mentioned, stockQuote.getSymbol()));
+    });
+    await Promise.all(promises);
+    if (await checkIfServiceActiveOnRegisteredGroup(message.chat.id, "report_flagged_country")) {
+      flaggedCountryList = Object.keys(flaggedCountries);
+    }
+    const notFoundStockList = tickerSymbols.filter((symbol) => !stockListQuote.map((slq) => slq.getSymbol()).includes(symbol));
+    const filteredStockListQuote = stockListQuote.filter((stockQuote) => !flaggedCountryList.includes(stockQuote.getCountry()));
+    const replyMessages = filteredStockListQuote.map((stockQuote) => stockQuote.getVsSPYQuoteMessage());
+    let replyMessageText = replyMessages.join("\n");
+    if (notFoundStockList.length > 0) {
+      replyMessageText += "\n*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
+    }
+    if (replyMessageText) {
+      const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
+      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+    }
+
+    flaggedCountryList.forEach((countryCode) => {
+      const header = `*🚨🚨🚨 ${flaggedCountries[countryCode].name} 🚨🚨🚨*\n\n`;
+      const footer = `\nRequested by [${requesterName}](tg://user?id=${requesterId})`;
+      const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
+      const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getVsSPYQuoteMessage());
+      if (flaggedReplyMessages.length > 0) {
+        promises.push(ctx.reply(header + flaggedReplyMessages.join("\n") + footer, { parse_mode: "Markdown", disable_web_page_preview: true }));
+      }
+    });
+  } else {
+    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+  }
+  await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
+};
+
 exports.commandSp500Up = async (ctx) => {
   const message = ctx.update.message;
   const response = await RobinhoodWrapperClient.getSP500Up();

@@ -12,6 +12,7 @@ const {
   commandListPoll,
   commandWatch,
   commandStatus,
+  commandVsSPY,
 } = require("./bot_orchestration");
 const {
   registerExpiringMessage,
@@ -86,6 +87,10 @@ exports.register = (bot) => {
         description: "Get stock quote. Eg: Need ticker symbol as parameter",
       },
       {
+        command: "/spy",
+        description: "Get stock quote with YTD w.r.t SPY. Eg: Need ticker symbol as parameter",
+      },
+      {
         command: "/news",
         description: "Get latest news for stock quote. Eg: Need ticker symbol as parameter",
       },
@@ -138,6 +143,11 @@ exports.register = (bot) => {
   bot.command("quote", async (ctx) => {
     functions.logger.info("Telegram Event: Command Quote");
     await commandQuote(ctx);
+  });
+
+  bot.command("spy", async (ctx) => {
+    functions.logger.info("Telegram Event: Command Vs SPY");
+    await commandVsSPY(ctx);
   });
 
   // bot.command("history", async (ctx) => {

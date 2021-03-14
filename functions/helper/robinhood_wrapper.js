@@ -102,12 +102,16 @@ class RobinhoodWrapper {
     });
   };
 
-  getHistory = async (symbol) => {
+  getHistoricals = async (symbols) => {
     if (this.Robinhood == null) {
       this.Robinhood = await this.login();
     }
+    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) != symbol)) : symbols.replace(/[0-9]/g, "");
+    if (_.isEmpty(symbols)) {
+      return [];
+    }
     return new Promise((resolve, reject) => {
-      this.Robinhood.historicals(symbol, "month", "year", (err, response, body) => {
+      this.Robinhood.historicals(symbols, "day", "5year", (err, response, body) => {
         if (err) throw err;
         resolve(body);
       });

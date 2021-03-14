@@ -14,7 +14,19 @@ class StockQuote {
     industry,
     marketCap,
     high52Week,
-    low52Week
+    low52Week,
+    threeYearPL,
+    threeYearPLPercentage,
+    twoYearPL,
+    twoYearPLPercentage,
+    oneYearPL,
+    oneYearPLPercentage,
+    ytd,
+    ytdPercentage,
+    ytdSpy,
+    oneYearSpy,
+    twoYearSpy,
+    threeYearSpy
   ) {
     this.symbol = symbol.toUpperCase();
     this.tickerText = `[${this.symbol}](https://robinhood.com/stocks/${this.symbol})`;
@@ -46,6 +58,26 @@ class StockQuote {
     this.marketCap = marketCap;
     this.high52Week = high52Week;
     this.low52Week = low52Week;
+    this.threeYearPL = roundToTwo(threeYearPL);
+    this.threeYearPLPercentage = roundToTwo(threeYearPLPercentage);
+    this.threeYearPLIcon = getPriceMovementIcon(this.threeYearPLPercentage);
+    this.twoYearPL = roundToTwo(twoYearPL);
+    this.twoYearPLPercentage = roundToTwo(twoYearPLPercentage);
+    this.twoYearPLIcon = getPriceMovementIcon(this.twoYearPLPercentage);
+    this.oneYearPL = roundToTwo(oneYearPL);
+    this.oneYearPLPercentage = roundToTwo(oneYearPLPercentage);
+    this.oneYearPLIcon = getPriceMovementIcon(this.oneYearPLPercentage);
+    this.ytd = roundToTwo(ytd);
+    this.ytdPercentage = roundToTwo(ytdPercentage);
+    this.ytdIcon = getPriceMovementIcon(this.ytdPercentage);
+    this.ytdSpy = roundToTwo(ytdSpy);
+    this.ytdSpyIcon = getPriceMovementIcon(this.ytdSpy);
+    this.oneYearSpy = roundToTwo(oneYearSpy);
+    this.oneYearSpyIcon = getPriceMovementIcon(this.oneYearSpy);
+    this.twoYearSpy = roundToTwo(twoYearSpy);
+    this.twoYearSpyIcon = getPriceMovementIcon(this.twoYearSpy);
+    this.threeYearSpy = roundToTwo(threeYearSpy);
+    this.threeYearSpyIcon = getPriceMovementIcon(this.threeYearSpy);
 
     if (marketCap > 250000000 && marketCap < 2000000000) {
       this.marketCapSize = "Small-Cap";
@@ -106,6 +138,27 @@ class StockQuote {
       `*Price:* $${this.tradePrice} (${this.todayFullDayPL}%)${this.todayFullDayIcon}\n` +
       `*Today:* $${this.todayDiff} (${this.todayPL}%)${this.todayIcon}\n` +
       `*After Hours:* $${this.todayAfterHourDiff} (${this.todayAfterHourPL}%)${this.todayAfterHourIcon}\n`
+      // `*Sector:* ${this.sector}\n\n`
+      // `*Total P/L:* $${total} (${totalPL}%)`
+    );
+  };
+
+  getVsSPYQuoteMessage = () => {
+    const oneYear = moment().tz("America/Los_Angeles").subtract(1, "years").format("YYYY");
+    const twoYear = moment().tz("America/Los_Angeles").subtract(2, "years").format("YYYY");
+    const threeYear = moment().tz("America/Los_Angeles").subtract(3, "years").format("YYYY");
+    return (
+      `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})${this.marketCapIcon}\n` +
+      "*P/L:*\n" +
+      ` - *YTD:* $${this.ytd} (${this.ytdPercentage}%)${this.ytdIcon}\n` +
+      ` - *${oneYear} P/L:* $${this.oneYearPL} (${this.oneYearPLPercentage}%)${this.oneYearPLIcon}\n` +
+      ` - *${twoYear} P/L:* $${this.twoYearPL} (${this.twoYearPLPercentage}%)${this.twoYearPLIcon}\n` +
+      ` - *${threeYear} P/L:* $${this.threeYearPL} (${this.threeYearPLPercentage}%)${this.threeYearPLIcon}\n` +
+      "*Vs SPY:*\n" +
+      ` - *YTD:* ${this.ytdSpy}%${this.ytdSpyIcon}\n` +
+      ` - *${oneYear}:* ${this.oneYearSpy}%${this.oneYearSpyIcon}\n` +
+      ` - *${twoYear}:* ${this.twoYearSpy}%${this.twoYearSpyIcon}\n` +
+      ` - *${threeYear}:* ${this.threeYearSpy}%${this.threeYearSpyIcon}\n`
       // `*Sector:* ${this.sector}\n\n`
       // `*Total P/L:* $${total} (${totalPL}%)`
     );
@@ -175,6 +228,66 @@ class StockQuoteBuilder {
     return this;
   };
 
+  setYtd = (ytd) => {
+    this.ytd = ytd;
+    return this;
+  };
+
+  setYtdPercentage = (ytdPercentage) => {
+    this.ytdPercentage = ytdPercentage;
+    return this;
+  };
+
+  setOneYearPL = (oneYearPL) => {
+    this.oneYearPL = oneYearPL;
+    return this;
+  };
+
+  setOneYearPLPercentage = (oneYearPLPercentage) => {
+    this.oneYearPLPercentage = oneYearPLPercentage;
+    return this;
+  };
+
+  setTwoYearPL = (twoYearPL) => {
+    this.twoYearPL = twoYearPL;
+    return this;
+  };
+
+  setTwoYearPLPercentage = (twoYearPLPercentage) => {
+    this.twoYearPLPercentage = twoYearPLPercentage;
+    return this;
+  };
+
+  setThreeYearPL = (threeYearPL) => {
+    this.threeYearPL = threeYearPL;
+    return this;
+  };
+
+  setThreeYearPLPercentage = (threeYearPLPercentage) => {
+    this.threeYearPLPercentage = threeYearPLPercentage;
+    return this;
+  };
+
+  setYtdSpy = (ytdSpy) => {
+    this.ytdSpy = ytdSpy;
+    return this;
+  };
+
+  setOneYearSpy = (oneYearSpy) => {
+    this.oneYearSpy = oneYearSpy;
+    return this;
+  };
+
+  setTwoYearSpy = (twoYearSpy) => {
+    this.twoYearSpy = twoYearSpy;
+    return this;
+  };
+
+  setThreeYearSpy = (threeYearSpy) => {
+    this.threeYearSpy = threeYearSpy;
+    return this;
+  };
+
   build = () => {
     return new StockQuote(
       this.symbol,
@@ -187,7 +300,19 @@ class StockQuoteBuilder {
       this.industry,
       this.marketCap,
       this.high52Week,
-      this.low52Week
+      this.low52Week,
+      this.threeYearPL,
+      this.threeYearPLPercentage,
+      this.twoYearPL,
+      this.twoYearPLPercentage,
+      this.oneYearPL,
+      this.oneYearPLPercentage,
+      this.ytd,
+      this.ytdPercentage,
+      this.ytdSpy,
+      this.oneYearSpy,
+      this.twoYearSpy,
+      this.threeYearSpy
     );
   };
 }

@@ -663,15 +663,11 @@ function RobinhoodWebApi(opts, callback) {
     );
   };
 
-  api.historicals = function (symbol, intv, span, callback) {
+  api.historicals = function (symbols, intv, span, callback) {
     return _request.get(
       {
-        uri:
-          _apiUrl +
-          [
-            _endpoints.quotes + 'historicals/',
-            '/?interval=' + intv + '&span=' + span
-          ].join(symbol)
+        uri: _apiUrl + _endpoints.quotes + 'historicals/',
+        qs: { "interval": intv, "span": span, "symbols": symbols.join() }
       },
       callback
     );
