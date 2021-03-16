@@ -17,10 +17,13 @@ class StockQuote {
     low52Week,
     threeYearPL,
     threeYearPLPercentage,
+    threeYearOldClosePrice,
     twoYearPL,
     twoYearPLPercentage,
+    twoYearOldClosePrice,
     oneYearPL,
     oneYearPLPercentage,
+    oneYearOldClosePrice,
     ytd,
     ytdPercentage,
     ytdSpy,
@@ -60,24 +63,27 @@ class StockQuote {
     this.low52Week = low52Week;
     this.threeYearPL = roundToTwo(threeYearPL);
     this.threeYearPLPercentage = roundToTwo(threeYearPLPercentage);
-    this.threeYearPLIcon = getPriceMovementIcon(this.threeYearPLPercentage);
+    this.threeYearPLIcon = getPriceMovementIcon(threeYearPLPercentage);
     this.twoYearPL = roundToTwo(twoYearPL);
     this.twoYearPLPercentage = roundToTwo(twoYearPLPercentage);
-    this.twoYearPLIcon = getPriceMovementIcon(this.twoYearPLPercentage);
+    this.twoYearPLIcon = getPriceMovementIcon(twoYearPLPercentage);
     this.oneYearPL = roundToTwo(oneYearPL);
     this.oneYearPLPercentage = roundToTwo(oneYearPLPercentage);
-    this.oneYearPLIcon = getPriceMovementIcon(this.oneYearPLPercentage);
+    this.oneYearPLIcon = getPriceMovementIcon(oneYearPLPercentage);
     this.ytd = roundToTwo(ytd);
     this.ytdPercentage = roundToTwo(ytdPercentage);
-    this.ytdIcon = getPriceMovementIcon(this.ytdPercentage);
+    this.ytdIcon = getPriceMovementIcon(ytdPercentage);
     this.ytdSpy = roundToTwo(ytdSpy);
-    this.ytdSpyIcon = getPriceMovementIcon(this.ytdSpy);
+    this.ytdSpyIcon = getPriceMovementIcon(ytdSpy);
+    this.oneYearOldClosePrice = roundToTwo(oneYearOldClosePrice);
     this.oneYearSpy = roundToTwo(oneYearSpy);
-    this.oneYearSpyIcon = getPriceMovementIcon(this.oneYearSpy);
+    this.oneYearSpyIcon = getPriceMovementIcon(oneYearSpy);
+    this.twoYearOldClosePrice = roundToTwo(twoYearOldClosePrice);
     this.twoYearSpy = roundToTwo(twoYearSpy);
-    this.twoYearSpyIcon = getPriceMovementIcon(this.twoYearSpy);
+    this.twoYearSpyIcon = getPriceMovementIcon(twoYearSpy);
+    this.threeYearOldClosePrice = roundToTwo(threeYearOldClosePrice);
     this.threeYearSpy = roundToTwo(threeYearSpy);
-    this.threeYearSpyIcon = getPriceMovementIcon(this.threeYearSpy);
+    this.threeYearSpyIcon = getPriceMovementIcon(threeYearSpy);
 
     if (marketCap > 250000000 && marketCap < 2000000000) {
       this.marketCapSize = "Small-Cap";
@@ -149,11 +155,11 @@ class StockQuote {
     const threeYear = moment().tz("America/Los_Angeles").subtract(3, "years").format("YYYY");
     return (
       `*Ticker:* ${this.tickerText} ${this.countryFlag} (${this.country})${this.marketCapIcon}\n` +
-      "*P/L:*\n" +
-      ` - *YTD:* $${this.ytd} (${this.ytdPercentage}%)${this.ytdIcon}\n` +
-      ` - *${oneYear} P/L:* $${this.oneYearPL} (${this.oneYearPLPercentage}%)${this.oneYearPLIcon}\n` +
-      ` - *${twoYear} P/L:* $${this.twoYearPL} (${this.twoYearPLPercentage}%)${this.twoYearPLIcon}\n` +
-      ` - *${threeYear} P/L:* $${this.threeYearPL} (${this.threeYearPLPercentage}%)${this.threeYearPLIcon}\n` +
+      "*Price (P/L):*\n" +
+      ` - *YTD:* $${this.tradePrice} (${this.ytdPercentage}%)${this.ytdIcon}\n` +
+      ` - *${oneYear}:* $${this.oneYearOldClosePrice} (${this.oneYearPLPercentage}%)${this.oneYearPLIcon}\n` +
+      ` - *${twoYear}:* $${this.twoYearOldClosePrice} (${this.twoYearPLPercentage}%)${this.twoYearPLIcon}\n` +
+      ` - *${threeYear}:* $${this.threeYearOldClosePrice} (${this.threeYearPLPercentage}%)${this.threeYearPLIcon}\n` +
       "*Vs SPY:*\n" +
       ` - *YTD:* ${this.ytdSpy}%${this.ytdSpyIcon}\n` +
       ` - *${oneYear}:* ${this.oneYearSpy}%${this.oneYearSpyIcon}\n` +
@@ -238,6 +244,11 @@ class StockQuoteBuilder {
     return this;
   };
 
+  setOneYearOldClosePrice = (oneYearOldClosePrice) => {
+    this.oneYearOldClosePrice = oneYearOldClosePrice;
+    return this;
+  };
+
   setOneYearPL = (oneYearPL) => {
     this.oneYearPL = oneYearPL;
     return this;
@@ -248,6 +259,11 @@ class StockQuoteBuilder {
     return this;
   };
 
+  setTwoYearOldClosePrice = (twoYearOldClosePrice) => {
+    this.twoYearOldClosePrice = twoYearOldClosePrice;
+    return this;
+  };
+
   setTwoYearPL = (twoYearPL) => {
     this.twoYearPL = twoYearPL;
     return this;
@@ -255,6 +271,11 @@ class StockQuoteBuilder {
 
   setTwoYearPLPercentage = (twoYearPLPercentage) => {
     this.twoYearPLPercentage = twoYearPLPercentage;
+    return this;
+  };
+
+  setThreeYearOldClosePrice = (threeYearOldClosePrice) => {
+    this.threeYearOldClosePrice = threeYearOldClosePrice;
     return this;
   };
 
@@ -303,10 +324,13 @@ class StockQuoteBuilder {
       this.low52Week,
       this.threeYearPL,
       this.threeYearPLPercentage,
+      this.threeYearOldClosePrice,
       this.twoYearPL,
       this.twoYearPLPercentage,
+      this.twoYearOldClosePrice,
       this.oneYearPL,
       this.oneYearPLPercentage,
+      this.oneYearOldClosePrice,
       this.ytd,
       this.ytdPercentage,
       this.ytdSpy,

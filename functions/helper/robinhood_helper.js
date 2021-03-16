@@ -86,10 +86,13 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                       s.historicals = [stockQuoteFourYearStart, stockQuoteThreeYearStart, stockQuoteTwoYearStart, stockQuoteStart, stockQuoteEnd];
                       s.three_year_pl = stockQuoteThreeYearStart.close_price - stockQuoteFourYearStart.close_price;
                       s.three_year_pl_percentage = (s.three_year_pl * 100) / stockQuoteFourYearStart.close_price;
+                      s.three_year_old_close_price = stockQuoteThreeYearStart.close_price;
                       s.two_year_pl = stockQuoteTwoYearStart.close_price - stockQuoteThreeYearStart.close_price;
                       s.two_year_pl_percentage = (s.two_year_pl * 100) / stockQuoteThreeYearStart.close_price;
+                      s.two_year_old_close_price = stockQuoteTwoYearStart.close_price;
                       s.one_year_pl = stockQuoteStart.close_price - stockQuoteTwoYearStart.close_price;
                       s.one_year_pl_percentage = (s.one_year_pl * 100) / stockQuoteTwoYearStart.close_price;
+                      s.one_year_old_close_price = stockQuoteStart.close_price;
                       s.ytd = stockQuoteEnd.close_price - stockQuoteStart.close_price;
                       s.ytd_percentage = (s.ytd * 100) / stockQuoteStart.close_price;
                       return s;
@@ -103,10 +106,13 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                             stockQuoteBuilder
                               .setThreeYearPL(stockHistorial[0].three_year_pl)
                               .setThreeYearPLPercentage(stockHistorial[0].three_year_pl_percentage)
+                              .setThreeYearOldClosePrice(stockHistorial[0].three_year_old_close_price)
                               .setTwoYearPL(stockHistorial[0].two_year_pl)
                               .setTwoYearPLPercentage(stockHistorial[0].two_year_pl_percentage)
+                              .setTwoYearOldClosePrice(stockHistorial[0].two_year_old_close_price)
                               .setOneYearPL(stockHistorial[0].one_year_pl)
                               .setOneYearPLPercentage(stockHistorial[0].one_year_pl_percentage)
+                              .setOneYearOldClosePrice(stockHistorial[0].one_year_old_close_price)
                               .setYtd(stockHistorial[0].ytd)
                               .setYtdPercentage(stockHistorial[0].ytd_percentage)
                               .setYtdSpy(stockHistorial[0].ytd_percentage - stockHistorialSPY[0].ytd_percentage)
