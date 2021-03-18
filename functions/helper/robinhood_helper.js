@@ -70,19 +70,19 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                       const todayEnd = moment().tz("America/Los_Angeles").unix();
                       const stockQuoteFourYearStart = s.historicals
                         .filter((h) => moment(h.begins_at).unix() >= fourYearStart && moment(h.begins_at).unix() <= fourYearEnd)
-                        .slice(-1)[0];
+                        .slice(-1)[0] || { close_price: 0 };
                       const stockQuoteThreeYearStart = s.historicals
                         .filter((h) => moment(h.begins_at).unix() >= threeYearStart && moment(h.begins_at).unix() <= threeYearEnd)
-                        .slice(-1)[0];
+                        .slice(-1)[0] || { close_price: 0 };
                       const stockQuoteTwoYearStart = s.historicals
                         .filter((h) => moment(h.begins_at).unix() >= twoYearStart && moment(h.begins_at).unix() <= twoYearEnd)
-                        .slice(-1)[0];
+                        .slice(-1)[0] || { close_price: 0 };
                       const stockQuoteStart = s.historicals
                         .filter((h) => moment(h.begins_at).unix() >= previousYearStart && moment(h.begins_at).unix() <= previousYearEnd)
-                        .slice(-1)[0];
+                        .slice(-1)[0] || { close_price: 0 };
                       const stockQuoteEnd = s.historicals
                         .filter((h) => moment(h.begins_at).unix() >= todayStart && moment(h.begins_at).unix() <= todayEnd)
-                        .slice(-1)[0];
+                        .slice(-1)[0] || { close_price: 0 };
                       s.historicals = [stockQuoteFourYearStart, stockQuoteThreeYearStart, stockQuoteTwoYearStart, stockQuoteStart, stockQuoteEnd];
                       s.three_year_pl = stockQuoteThreeYearStart.close_price - stockQuoteFourYearStart.close_price;
                       s.three_year_pl_percentage = (s.three_year_pl * 100) / stockQuoteFourYearStart.close_price;

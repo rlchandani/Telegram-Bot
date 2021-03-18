@@ -13,6 +13,10 @@ const timeUtil = require("./helper/timeUtil");
 const utils = require("./helper/utils");
 const moment = require("moment-timezone");
 const RobinhoodWrapper = require("./helper/robinhood_wrapper");
+const runtimeOpts = {
+  timeoutSeconds: 30,
+  memory: "512MB",
+};
 
 /** **********************************  Telegram Init  ********************************** **/
 // Configure Telegraf bot using access token
@@ -55,7 +59,7 @@ bot.catch((err, ctx) => {
 // process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
 // Telegram Webhook Endpoint
-exports.index = functions.https.onRequest(async (request, response) => {
+exports.index = functions.runWith(runtimeOpts).https.onRequest(async (request, response) => {
   functions.logger.log("Incoming message", request.body);
   return await bot.handleUpdate(request.body, response);
   // response.send("Responding to Telegram Webhook");
