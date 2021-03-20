@@ -162,11 +162,9 @@ class StockQuote {
       ` - *${threeYear}:* $${this.threeYearOldClosePrice} (${this.threeYearPLPercentage}%)${this.threeYearPLIcon}\n` +
       "*Vs SPY:*\n" +
       ` - *YTD:* ${this.ytdSpy}%${this.ytdSpyIcon}\n` +
-      ` - *${oneYear}:* ${this.oneYearSpy}%${this.oneYearSpyIcon}\n` +
-      ` - *${twoYear}:* ${this.twoYearSpy}%${this.twoYearSpyIcon}\n` +
-      ` - *${threeYear}:* ${this.threeYearSpy}%${this.threeYearSpyIcon}\n`
-      // `*Sector:* ${this.sector}\n\n`
-      // `*Total P/L:* $${total} (${totalPL}%)`
+      (this.oneYearPLPercentage === "0.00" ? ` - *${oneYear}:* N/A\n` : ` - *${oneYear}:* ${this.oneYearSpy}%${this.oneYearSpyIcon}\n`) +
+      (this.twoYearPLPercentage === "0.00" ? ` - *${twoYear}:* N/A\n` : ` - *${twoYear}:* ${this.twoYearSpy}%${this.twoYearSpyIcon}\n`) +
+      (this.threeYearPLPercentage === "0.00" ? ` - *${threeYear}:* N/A\n` : ` - *${threeYear}:* ${this.threeYearSpy}%${this.threeYearSpyIcon}\n`)
     );
   };
 

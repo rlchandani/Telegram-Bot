@@ -37,9 +37,10 @@ exports.commandStatus = async (ctx) => {
   const groupId = message.chat.id;
   const serviceStatus = await getRegisteredGroupServiceStatus(groupId);
   const replyMessage = Object.keys(serviceStatus).map((serviceName) => `${serviceName} - \`${serviceStatus[serviceName]}\``);
-  await ctx.reply("*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
-    parse_mode: "Markdown",
-  });
+  await _sendMessage(
+    ctx,
+    "*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`
+  );
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
 
@@ -136,8 +137,8 @@ exports.commandQuote = async (ctx) => {
       replyMessageText += "\n*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
     if (replyMessageText) {
-      const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
-      promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+      // To maintain message delivery order, this is not pushed to promise queue
+      await _sendMessage(ctx, replyMessageText);
     }
 
     flaggedCountryList.forEach((countryCode) => {
@@ -146,17 +147,11 @@ exports.commandQuote = async (ctx) => {
       const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
       const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (flaggedReplyMessages.length > 0) {
-        promises.push(
-          ctx.reply(header + flaggedReplyMessages.join("`-------------------------`\n") + footer, {
-            parse_mode: "Markdown",
-            disable_web_page_preview: true,
-          })
-        );
+        promises.push(_sendMessage(ctx, header + flaggedReplyMessages.join("`-------------------------`\n") + footer));
       }
     });
   } else {
-    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+    promises.push(_sendMessage(ctx, "Please provide ticker symbol to track\nExample: /quote TSLA"));
   }
   promises.push(registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
@@ -169,9 +164,8 @@ exports.commandVsSPY = async (ctx) => {
   const tickerSymbols = extractTickerSymbolsFromQuoteCommand(message.text);
   let flaggedCountryList = [];
   const promises = [];
-  if (tickerSymbols.length >= 8) {
-    const replyMessage = await ctx.reply("Error: Max 8 tickers are allowed at a time", { parse_mode: "Markdown" });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+  if (tickerSymbols.length > 8) {
+    promises.push(_sendMessage(ctx, "Error: Max 8 tickers are allowed at a time"));
   } else if (tickerSymbols.length > 0) {
     const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols, true);
     stockListQuote.forEach((stockQuote) => {
@@ -189,8 +183,8 @@ exports.commandVsSPY = async (ctx) => {
       replyMessageText += "\n*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
     if (replyMessageText) {
-      const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
-      promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+      // To maintain message delivery order, this is not pushed to promise queue
+      await _sendMessage(ctx, replyMessageText);
     }
 
     flaggedCountryList.forEach((countryCode) => {
@@ -199,20 +193,21 @@ exports.commandVsSPY = async (ctx) => {
       const flaggedStockListQuote = stockListQuote.filter((stockQuote) => stockQuote.getCountry() === countryCode);
       const flaggedReplyMessages = flaggedStockListQuote.map((stockQuote) => stockQuote.getVsSPYQuoteMessage());
       if (flaggedReplyMessages.length > 0) {
-        promises.push(
-          ctx.reply(header + flaggedReplyMessages.join("`-------------------------`\n") + footer, {
-            parse_mode: "Markdown",
-            disable_web_page_preview: true,
-          })
-        );
+        promises.push(_sendMessage(ctx, header + flaggedReplyMessages.join("`-------------------------`\n") + footer));
       }
     });
   } else {
-    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /quote TSLA", { parse_mode: "Markdown" });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+    promises.push(_sendMessage(ctx, "Please provide ticker symbol to track\nExample: /quote TSLA"));
   }
   promises.push(registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
+};
+
+const _sendMessage = async (ctx, messageText, expire = true, expireTime = timeUtil.expireIn3Hours()) => {
+  const replyMessage = await ctx.reply(messageText, { parse_mode: "Markdown", disable_web_page_preview: true });
+  if (expire) {
+    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, expireTime);
+  }
 };
 
 exports.commandSp500Up = async (ctx) => {
@@ -225,15 +220,11 @@ exports.commandSp500Up = async (ctx) => {
       const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join("\n"), { parse_mode: "Markdown", disable_web_page_preview: true });
-        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+        await _sendMessage(ctx, replyMessages.join("\n"));
       }
     }
   } else {
-    const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime", {
-      parse_mode: "Markdown",
-    });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+    await _sendMessage(ctx, "Sorry, failed to fetch SP500 up list from server.\nPlease try again after sometime");
   }
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
@@ -248,15 +239,11 @@ exports.commandSp500Down = async (ctx) => {
       const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, tickerSymbols);
       const replyMessages = stockListQuote.map((stockQuote) => stockQuote.getStockQuoteMessage());
       if (replyMessages.length > 0) {
-        const replyMessage = await ctx.reply(replyMessages.join("\n"), { parse_mode: "Markdown", disable_web_page_preview: true });
-        await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+        await _sendMessage(ctx, replyMessages.join("\n"));
       }
     }
   } else {
-    const replyMessage = await ctx.reply("Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime", {
-      parse_mode: "Markdown",
-    });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+    await _sendMessage(ctx, "Sorry, failed to fetch SP500 down list from server.\nPlease try again after sometime");
   }
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
@@ -268,8 +255,7 @@ exports.commandNews = async (ctx) => {
   if (tickerSymbols.length > 0) {
     tickerSymbols.forEach(async (tickerSymbol) => promises.push(_commandNews(ctx, tickerSymbol)));
   } else {
-    const replyMessage = await ctx.reply("Please provide ticker symbol to track\nExample: /news TSLA", { parse_mode: "Markdown" });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+    await _sendMessage(ctx, "Please provide ticker symbol to track\nExample: /news TSLA");
   }
   promises.push(registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours()));
   await Promise.all(promises);
@@ -280,18 +266,12 @@ const _commandNews = async (ctx, tickerSymbol) => {
   if ("results" in response) {
     const replyMessages = response.results.map((s, i) => `${i + 1}. [${s.title}](${s.url})\n*Source:*\`\`\`${s.source}\`\`\`\n`);
     if (replyMessages.length > 0) {
-      const replyMessage = await ctx.reply(`*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""), {
-        parse_mode: "Markdown",
-        disable_web_page_preview: true,
-      });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+      await _sendMessage(ctx, `*Ticker:* ${tickerSymbol}\n` + replyMessages.join(""));
     } else {
-      const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
-      await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+      await _sendMessage(ctx, `No news found for ${tickerSymbol}`);
     }
   } else {
-    const replyMessage = await ctx.reply(`No news found for ${tickerSymbol}`, { parse_mode: "Markdown" });
-    await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours());
+    await _sendMessage(ctx, `No news found for ${tickerSymbol}`);
   }
 };
 
@@ -311,8 +291,7 @@ exports.commandWatch = async (ctx) => {
     if (notFoundStockList.length > 0) {
       replyMessageText += "*Tickers not found:*\n" + notFoundStockList.map((t) => `$${t}`).join(", ");
     }
-    const replyMessage = await ctx.reply(replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true });
-    promises.push(registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, DELETE, timeUtil.expireIn3Hours()));
+    promises.push(_sendMessage(ctx, replyMessageText));
   } else {
     promises.push(sendReportForWatchlistByPerformanceToGroups(ctx, message.chat.id));
   }

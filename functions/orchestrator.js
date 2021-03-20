@@ -140,9 +140,11 @@ exports.getPolls = async (groupId) => {
 exports.registerExpiringMessage = async (groupId, messageId, action, expiringTime = timeUtil.expireIn24Hours()) => {
   try {
     await expiringMessageDao.add(groupId, messageId, action, expiringTime.unix());
-    functions.logger.info(`Message registered for groupId: ${groupId} with expiring time: ${expiringTime.unix()}`);
+    functions.logger.info(`Registered: Expiring Message with messageId: ${messageId}, groupId: ${groupId} and expiring time: ${expiringTime.unix()}`);
   } catch (err) {
-    functions.logger.error(`Message failed to register for groupId: ${groupId} with expiring time: ${expiringTime.unix()}`);
+    functions.logger.error(
+      `Registration Failed: Expiring Message with messageId: ${messageId}, groupId: ${groupId} and expiring time: ${expiringTime.unix()}`
+    );
     throw err;
   }
 };
