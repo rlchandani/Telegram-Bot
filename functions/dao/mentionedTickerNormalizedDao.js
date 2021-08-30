@@ -3,16 +3,21 @@ const functions = require("firebase-functions");
 const { firebaseMentionedTickerNormalizedRef } = require("../helper/dbHelper");
 
 exports.add = async (groupId, userId, day, symbol, price, createdOn) => {
-  const record = {};
-  record[symbol] = {
-    total: admin.database.ServerValue.increment(1),
-    users: {},
-  };
-  record[symbol].users[userId] = {
-    price: parseFloat(price),
-    total: admin.database.ServerValue.increment(1),
-  };
-  await firebaseMentionedTickerNormalizedRef.child(groupId).child(day).update(record);
+  await firebaseMentionedTickerNormalizedRef
+    .child(groupId)
+    .child(day)
+    .child(symbol)
+    .update({ total: admin.database.ServerValue.increment(1) });
+  await firebaseMentionedTickerNormalizedRef
+    .child(groupId)
+    .child(day)
+    .child(symbol)
+    .child("users")
+    .child(userId)
+    .update({
+      price: parseFloat(price),
+      total: admin.database.ServerValue.increment(1),
+    });
   // const snapshot = await this.get(groupId, day);
   // if (snapshot == null) {
   //   const data = {};
