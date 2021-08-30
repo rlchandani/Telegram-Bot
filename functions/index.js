@@ -64,7 +64,7 @@ exports.index = functions.runWith(runtimeOpts).https.onRequest(async (request, r
 });
 
 /** **********************************  Debug Endpoint  ********************************** **/
-exports.debug = functions.https.onRequest(async (request, response) => {
+exports.debug = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).https.onRequest(async (request, response) => {
   // orchestrator.sendReportForTopMentionedByCountToGroups(bot);
   // orchestrator.sendReportForTopMentionedByPerformanceToGroups(bot);
   let msg = "No action provided";
