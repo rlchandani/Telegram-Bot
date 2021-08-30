@@ -102,9 +102,10 @@ exports.debug = functions.https.onRequest(async (request, response) => {
         await orchestrator.usaHoliday(bot);
         break;
       case "backfillMentionedTickerNormalizedTable":
+        msg = "Backfilling MentionedTickerNormalized Table";
         const days = [];
         const todayStartOfDay = moment().tz("America/Los_Angeles").startOf("day");
-        for (let i = 0; i <= 100; i++) {
+        for (let i = 0; i <= 1000; i++) {
           const day = moment(todayStartOfDay).subtract(i, "days");
           if (day.isBefore()) {
             days.push(day.unix());
