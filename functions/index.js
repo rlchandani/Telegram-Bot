@@ -1,6 +1,4 @@
 /* eslint-disable no-case-declarations */
-"use strict";
-
 const functions = require("firebase-functions");
 const { firebaseConfig } = require("./helper/firebase_config");
 const { Telegraf } = require("telegraf");
@@ -105,10 +103,9 @@ exports.debug = functions.https.onRequest(async (request, response) => {
         break;
       case "backfillMentionedTickerNormalizedTable":
         const days = [];
-        const currentDate = moment().tz("America/Los_Angeles");
-        const weekStart = currentDate.clone().startOf("isoWeek");
+        const todayStartOfDay = moment().tz("America/Los_Angeles").startOf("day");
         for (let i = 0; i <= 100; i++) {
-          const day = moment(weekStart).subtract(i, "days");
+          const day = moment(todayStartOfDay).subtract(i, "days");
           if (day.isBefore()) {
             days.push(day.unix());
           }

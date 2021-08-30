@@ -5,7 +5,13 @@
     "registeredGroup": {
       "$groupId": {
         ".indexOn": ".value"
-      }
+      },
+      ".indexOn": [
+        "id",
+        "title",
+        "type",
+        "service/automated_quotes"
+      ]
     },
     "poll": {
       ".indexOn": [
@@ -13,11 +19,18 @@
       ]
     },
     "mentionedTicker": {
+      ".read": true,
       "$groupId": {
         ".indexOn": [
-            "day"
+          "createdOn",
+          "day",
+          "symbol",
+          "userId"
         ]
       }
+    },
+    "mentionedTickerNormalized": {
+      ".read": true
     }
   }
 }

@@ -1,30 +1,54 @@
-"use strict";
-
+const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const { firebaseMentionedTickerNormalizedRef } = require("../helper/dbHelper");
 
 exports.add = async (groupId, userId, day, symbol, price, createdOn) => {
-  const snapshot = await this.get(groupId, symbol);
-  if (snapshot == null) {
-    await firebaseMentionedTickerNormalizedRef
-      .child(groupId)
-      .child(symbol)
-      .set({
-        day: day,
-        userId: userId,
-        symbol: symbol,
-        price: parseFloat(price),
-        createdOn: createdOn,
-      });
-    return true;
-  }
-  return false;
+  const record = {};
+  record[symbol] = {
+    total: admin.database.ServerValue.increment(1),
+    users: {},
+  };
+  record[symbol].users[userId] = {
+    price: parseFloat(price),
+    total: admin.database.ServerValue.increment(1),
+  };
+  await firebaseMentionedTickerNormalizedRef.child(groupId).child(day).update(record);
+  // const snapshot = await this.get(groupId, day);
+  // if (snapshot == null) {
+  //   const data = {};
+  //   data[symbol] = {
+  //     total: 1,
+  //     users: {},
+  //   };
+  //   data[symbol].users[userId] = {
+  //     price: parseFloat(price),
+  //     total: 1,
+  //   };
+  //   await firebaseMentionedTickerNormalizedRef.child(groupId).child(day).set(data);
+  // } else {
+  //   await firebaseMentionedTickerNormalizedRef
+  //     .child(groupId)
+  //     .child(day)
+  //     .child(symbol)
+  //     .update({ total: admin.database.ServerValue.increment(1) });
+  //   await firebaseMentionedTickerNormalizedRef
+  //     .child(groupId)
+  //     .child(day)
+  //     .child(symbol)
+  //     .child("users")
+  //     .child(userId)
+  //     .update({
+  //       price: parseFloat(price),
+  //       total: admin.database.ServerValue.increment(1),
+  //     });
+  // }
+  return true;
 };
 
-exports.get = async (groupId, symbol) => {
+exports.get = async (groupId, day) => {
   return firebaseMentionedTickerNormalizedRef
     .child(groupId)
-    .child(symbol)
+    .child(day)
     .once("value")
     .then((data) => {
       return data.val() !== null ? data.val() : null;
@@ -35,7 +59,7 @@ exports.get = async (groupId, symbol) => {
     });
 };
 
-exports.getTickerBySybolsForGroup = async (groupId, symbols=[]) => {
+exports.getTickerBySybolsForGroup = async (groupId, symbols = []) => {
   const promises = symbols.map((symbol) => {
     return firebaseMentionedTickerNormalizedRef
       .child(groupId)
