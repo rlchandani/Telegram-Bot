@@ -101,10 +101,10 @@ class StockQuote {
   }
 
   getSymbol = () => this.symbol;
-  getTradePrice = () => this.tradePrice;
-  getLastTradedPrice = () => this.lastTradePrice;
-  getLastExtendedHoursTradePrice = () => this.lastExtendedHoursTradePrice;
-  getPreviousClose = () => this.previousClose;
+  getTradePrice = () => parseFloat(this.tradePrice.replace(/,/g, ""));
+  getLastTradedPrice = () => parseFloat(this.lastTradePrice.replace(/,/g, ""));
+  getLastExtendedHoursTradePrice = () => parseFloat(this.lastExtendedHoursTradePrice.replace(/,/g, ""));
+  getPreviousClose = () => parseFloat(this.previousClose.replace(/,/g, ""));
   getCountry = () => this.country;
   getCountryFlag = () => this.countryFlag;
   getSector = () => this.sector;
