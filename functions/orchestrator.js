@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 const { firebaseConfig } = require("./helper/firebase_config");
 const registeredGroupDao = require("./dao/registeredGroupDao");
@@ -27,7 +25,7 @@ exports.registerMentionedTicker = async (groupId, userId, tickerSymbol, tickerPr
       moment().tz("America/Los_Angeles").startOf("day").unix(),
       tickerSymbol,
       tickerPrice,
-      moment().tz("America/Los_Angeles").unix()
+      moment().tz("America/Los_Angeles").unix(),
     );
     functions.logger.info(`Ticker ${tickerSymbol} registered for groupId: ${groupId} by userId: ${userId}`);
   } catch (err) {
@@ -143,7 +141,7 @@ exports.registerExpiringMessage = async (groupId, messageId, action, expiringTim
     functions.logger.info(`Registered: Expiring Message with messageId: ${messageId}, groupId: ${groupId} and expiring time: ${expiringTime.unix()}`);
   } catch (err) {
     functions.logger.error(
-      `Registration Failed: Expiring Message with messageId: ${messageId}, groupId: ${groupId} and expiring time: ${expiringTime.unix()}`
+      `Registration Failed: Expiring Message with messageId: ${messageId}, groupId: ${groupId} and expiring time: ${expiringTime.unix()}`,
     );
     throw err;
   }
@@ -186,12 +184,12 @@ exports.getRegisteredGroups = async (filterOnService) => {
       return Object.keys(snapshot)
         .filter((groupId) => {
           const group = snapshot[groupId];
-          return group.service != undefined && group.service[filterOnService] == true;
+          return group.service !== undefined && group.service[filterOnService] === true;
         })
         .map((groupId) => snapshot[groupId]);
     } else {
       return Object.keys(snapshot)
-        .filter((groupId) => snapshot[groupId].enabled == true)
+        .filter((groupId) => snapshot[groupId].enabled === true)
         .map((groupId) => snapshot[groupId]);
     }
   }
@@ -213,7 +211,7 @@ exports.deRegisteredGroup = async (groupId) => {
   registerAction.registerOptions.forEach((optionGroup) =>
     optionGroup.forEach((option) => {
       promises.push(this.disableService(groupId, option.action));
-    })
+    }),
   );
   await Promise.all(promises);
 };
@@ -249,7 +247,7 @@ exports.getRegisteredGroupServiceStatus = async (groupId) => {
       } else {
         response[option.name] = services[option.action] === false || services[option.action] === undefined ? "Disabled" : "Enabled";
       }
-    })
+    }),
   );
   return response;
 };
@@ -257,7 +255,7 @@ exports.getRegisteredGroupServiceStatus = async (groupId) => {
 exports.checkIfServiceActiveOnRegisteredGroup = async (groupId, serviceName) => {
   const group = await this.getRegisteredGroupById(groupId);
   const services = group.service;
-  if (services != undefined && services[serviceName] != null && services[serviceName] == true) {
+  if (services !== undefined && services[serviceName] != null && services[serviceName] === true) {
     return true;
   }
   return false;
@@ -415,14 +413,14 @@ exports.unpinChatMessage = async (bot, groupId, messageId) => {
 exports.usaHoliday = async (bot) => {
   const me = await bot.telegram.getMe();
   const usaEvents = await calendar.getTodayEventUSA(firebaseConfig.google.api_key);
-  if (usaEvents.length == 0) {
+  if (usaEvents.length === 0) {
     functions.logger.info("No USA events found for today");
   }
   usaEvents.forEach((event) => {
     this.sendMessageToRegisteredGroups(
       bot,
       "holiday_events_usa",
-      "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+      "To all my American friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name,
     );
   });
 };
@@ -430,14 +428,14 @@ exports.usaHoliday = async (bot) => {
 exports.indiaHoliday = async (bot) => {
   const me = await bot.telegram.getMe();
   const indiaEvents = await calendar.getTodayEventIndia(firebaseConfig.google.api_key);
-  if (indiaEvents.length == 0) {
+  if (indiaEvents.length === 0) {
     functions.logger.info("No Indian events found for today");
   }
   indiaEvents.forEach((event) => {
     this.sendMessageToRegisteredGroups(
       bot,
       "holiday_events_india",
-      "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name
+      "To all my Indian friends,\n\nHappy " + event + "!!! 🎊🎉🥂\n\n Best Wishes\n-" + me.first_name,
     );
   });
 };
@@ -458,7 +456,7 @@ exports.sendReportForWatchlistByPerformanceToGroups = async (bot, groupId) => {
       );
     });
     if (messageText.length > 0) {
-      const groupName = group.type == "group" ? group.title : group.first_name;
+      const groupName = group.type === "group" ? group.title : group.first_name;
       const headerText = `*Watchlist Status:* ${groupName}\nTop 10 performaning stocks from watchlist:\n\n`;
       await bot.telegram.sendMessage(group.id, headerText + messageText.join("\n"), {
         parse_mode: "Markdown",
@@ -493,7 +491,7 @@ exports.sendReportForWatchlistByPerformanceGroupBySectorToGroups = async (bot, g
       }
     });
     if (replyMessageText) {
-      const groupName = group.type == "group" ? group.title : group.first_name;
+      const groupName = group.type === "group" ? group.title : group.first_name;
       const headerText = `*Watchlist Status:* ${groupName}\nTop 10 performaning stocks from watchlist per sector:`;
       promises.push(bot.telegram.sendMessage(group.id, headerText + replyMessageText, { parse_mode: "Markdown", disable_web_page_preview: true }));
     } else {

@@ -28,11 +28,11 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                       .setExtendedHourTradePrice(stockQuote.last_extended_hours_trade_price)
                       .setPreviousClose(stockQuote.previous_close)
                       .setCountry(instrumentDocument.country)
-                      .setCountryFlag(countryCodeToFlag(instrumentDocument.country))
+                      .setCountryFlag(countryCodeToFlag(instrumentDocument.country)),
                   );
                 });
               });
-            })
+            }),
         )
           .then((stockQuoteBuilders) => {
             return Promise.all(
@@ -47,7 +47,7 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                     resolve(stockQuoteBuilder);
                   });
                 });
-              })
+              }),
             );
           })
           .then((stockQuoteBuilders) => {
@@ -119,17 +119,17 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
                               .setOneYearSpy(stockHistorial[0].one_year_pl_percentage - stockHistorialSPY[0].one_year_pl_percentage)
                               .setTwoYearSpy(stockHistorial[0].two_year_pl_percentage - stockHistorialSPY[0].two_year_pl_percentage)
                               .setThreeYearSpy(stockHistorial[0].three_year_pl_percentage - stockHistorialSPY[0].three_year_pl_percentage)
-                              .build()
-                          )
+                              .build(),
+                          ),
                         );
-                      })
+                      }),
                     );
                     resolve(stockQuotes);
                   } else {
                     const stockQuotes = Promise.all(
                       stockQuoteBuilders.map((stockQuoteBuilder) => {
                         return new Promise((resolve, reject) => resolve(stockQuoteBuilder.build()));
-                      })
+                      }),
                     );
                     resolve(stockQuotes);
                   }
@@ -144,7 +144,7 @@ exports.getStockListQuote = (RobinhoodWrapperClient, tickerSymbols, vsSpy = fals
               return s.filter((a) => a.getSymbol() !== "SPY");
             }
             return s;
-          })
+          }),
         );
       } else {
         resolve([]);

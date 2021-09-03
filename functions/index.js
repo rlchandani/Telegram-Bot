@@ -76,7 +76,7 @@ exports.debug = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).https.
           bot,
           "Debug Poll?",
           ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-          { is_anonymous: false }
+          { is_anonymous: false },
         );
         msg = "Poll sent, will be delivered if group is registered to scheduled poll service";
         break;
@@ -85,7 +85,7 @@ exports.debug = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).https.
           bot,
           "scheduled_reminders",
           `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
-          { parse_mode: "Markdown", reply_markup: { force_reply: true } }
+          { parse_mode: "Markdown", reply_markup: { force_reply: true } },
         );
         msg = "Reminder Sent, will be delivered if group is registered to scheduled reminder service";
         break;
@@ -145,7 +145,7 @@ exports.mentionedTickerOnCreateTrigger = functions.database.ref("/mentionedTicke
     original.symbol,
     original.price,
     original.day,
-    original.createdOn
+    original.createdOn,
   );
 });
 
@@ -190,7 +190,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
   const RobinhoodWrapperClient = new RobinhoodWrapper(
     firebaseConfig.robinhood.username,
     firebaseConfig.robinhood.password,
-    firebaseConfig.robinhood.api_key
+    firebaseConfig.robinhood.api_key,
   );
   if (await utils.isMarketOpenToday(RobinhoodWrapperClient)) {
     functions.logger.info("Market is open today");
@@ -200,7 +200,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
         bot,
         "Portfolio Movement @9AM?",
         ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-        { is_anonymous: false }
+        { is_anonymous: false },
       );
     }
     if (timeUtil.is4PM("America/Los_Angeles")) {
@@ -209,7 +209,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
         bot,
         "Portfolio Movement @4PM?",
         ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
-        { is_anonymous: false }
+        { is_anonymous: false },
       );
     }
     if (timeUtil.is4PM("America/Los_Angeles")) {
@@ -218,7 +218,7 @@ exports.stockMovementPollScheduledFunction = functions.pubsub.schedule("0 9,16,1
         bot,
         "scheduled_reminders",
         `⏰ *Reminder* to share your top 5 movers for today *${moment().format("YYYY-MM-DD")}* in terms of 💵 value.`,
-        { parse_mode: "Markdown", reply_markup: { force_reply: true } }
+        { parse_mode: "Markdown", reply_markup: { force_reply: true } },
       );
     }
   } else {

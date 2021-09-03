@@ -25,6 +25,8 @@
     "web-vitals": "^1.0.1"
   },
   "scripts": {
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "prebuild": "rm -rf ./webApp/home",

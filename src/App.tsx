@@ -25,6 +25,7 @@ const PrivateRoute = (props: PrivateRouteProps) => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PublicRoute = (props: PrivateRouteProps) => {
   const { component: Component, authenticated, ...rest } = props;
   return <Route {...rest} render={(props) => (authenticated === false ? <Component {...props} /> : <Redirect to="/chat" />)} />;

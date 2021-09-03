@@ -22,8 +22,6 @@
  * @version 1.1.2
  */
 
-'use strict';
-
 // Dependencies
 var request = require('request');
 var Promise = require('promise');
@@ -237,12 +235,12 @@ function RobinhoodWebApi(opts, callback) {
   }
 
   function filter_bad_options(options) {
-    return options.filter(option => option.tradability == 'tradable');
+    return options.filter(option => option.tradability === 'tradable');
   }
 
   function stitch_options_with_details([details, options]) {
     let paired = details.map(detail => {
-      let match = options.find(option => option.url == detail.instrument);
+      let match = options.find(option => option.url === detail.instrument);
       if (match) {
         Object.keys(match).forEach(key => (detail[key] = match[key]));
       }
@@ -475,7 +473,7 @@ function RobinhoodWebApi(opts, callback) {
       return callback(
         {
           message:
-            order.state == 'cancelled'
+            order.state === 'cancelled'
               ? 'Order already cancelled.'
               : 'Order cannot be cancelled.',
           order: order

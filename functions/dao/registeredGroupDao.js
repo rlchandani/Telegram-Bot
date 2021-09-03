@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 
 const { firebaseRegisteredGroupsRef } = require("../helper/dbHelper");
@@ -8,9 +6,9 @@ exports.add = async (groupId, groupInfo, requestedBy, date, enabled) => {
   const snapshot = await this.get(groupId);
   if (
     snapshot == null ||
-    snapshot.title != groupInfo.title ||
-    snapshot.type != groupInfo.type ||
-    snapshot.all_members_are_administrators != groupInfo.all_members_are_administrators
+    snapshot.title !== groupInfo.title ||
+    snapshot.type !== groupInfo.type ||
+    snapshot.all_members_are_administrators !== groupInfo.all_members_are_administrators
   ) {
     groupInfo["enabled"] = false;
     groupInfo["service"] = snapshot != null ? snapshot.service : null;

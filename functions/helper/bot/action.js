@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 const orchestrator = require("../../orchestrator");
 const registerAction = require("../../model/register_action");
@@ -277,7 +275,7 @@ exports.register = (bot) => {
     registerAction.registerOptions.forEach((optionGroup) =>
       optionGroup.forEach((option) => {
         promises.push(orchestrator.enableService(message.chat.id, option.action));
-      })
+      }),
     );
     await Promise.all(promises);
     await ctx.editMessageText(`✅ All Services - Enabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
@@ -295,7 +293,7 @@ exports.register = (bot) => {
     registerAction.registerOptions.forEach((optionGroup) =>
       optionGroup.forEach((option) => {
         promises.push(orchestrator.disableService(message.chat.id, option.action));
-      })
+      }),
     );
     await Promise.all(promises);
     await ctx.editMessageText(`✅ All Services - Disabled\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {

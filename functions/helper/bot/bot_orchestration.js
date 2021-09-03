@@ -1,5 +1,3 @@
-"use strict";
-
 const { firebaseConfig } = require("../../helper/firebase_config");
 const { Markup } = require("telegraf");
 const RobinhoodWrapper = require("../robinhood_wrapper");
@@ -27,7 +25,7 @@ const { flaggedCountries } = require("../constant");
 const RobinhoodWrapperClient = new RobinhoodWrapper(
   firebaseConfig.robinhood.username,
   firebaseConfig.robinhood.password,
-  firebaseConfig.robinhood.api_key
+  firebaseConfig.robinhood.api_key,
 );
 
 exports.commandStatus = async (ctx) => {
@@ -39,7 +37,7 @@ exports.commandStatus = async (ctx) => {
   const replyMessage = Object.keys(serviceStatus).map((serviceName) => `${serviceName} - \`${serviceStatus[serviceName]}\``);
   await _sendMessage(
     ctx,
-    "*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`
+    "*Service Registration Status:*\n" + replyMessage.join("\n") + `\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
   );
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
 };
@@ -58,22 +56,22 @@ exports.commandRegister = async (ctx) => {
         await registerGroup(groupId, message.chat, message.from.id, message.date, true);
       }
       const registerOptionKeyboard = Markup.inlineKeyboard(
-        registerOptions.map((optionGroup) => optionGroup.map((option) => Markup.button.callback(option.name, option.action)))
+        registerOptions.map((optionGroup) => optionGroup.map((option) => Markup.button.callback(option.name, option.action))),
       );
       await ctx.reply("Choose from following services:", registerOptionKeyboard);
     } else {
       await ctx.reply(
         "🚫 Unauthorized Access: Only group admins are permitted this operation.\n\n" +
           `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
+        { parse_mode: "Markdown" },
       );
     }
   } else {
     await ctx.reply(
-      "❌ Registration Failed: only groups are allowed to register.\n\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
+      `❌ Registration Failed: only groups are allowed to register.\n\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
       {
         parse_mode: "Markdown",
-      }
+      },
     );
   }
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
@@ -96,18 +94,18 @@ exports.commandDeRegister = async (ctx) => {
       await ctx.reply(
         "✅ Request Completed: Group has been removed from all registered services.\n" +
           `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
+        { parse_mode: "Markdown" },
       );
     } else {
       await ctx.reply(
-        "🚫 Unauthorized Access: Only group admins are permitted this operation.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-        { parse_mode: "Markdown" }
+        `🚫 Unauthorized Access: Only group admins are permitted this operation.\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
+        { parse_mode: "Markdown" },
       );
     }
   } else {
     await ctx.reply(
-      "❌ Deregistered Failed: Only groups are allowed to deregister.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-      { parse_mode: "Markdown" }
+      `❌ Deregistered Failed: Only groups are allowed to deregister.\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
+      { parse_mode: "Markdown" },
     );
   }
   await registerExpiringMessage(message.chat.id, message.message_id, DELETE, timeUtil.expireIn3Hours());
@@ -368,13 +366,13 @@ exports.commandCreatePoll = async (ctx) => {
       options: ["Super Bullish (+ve) 🚀🚀", "Bullish (+ve) 🚀", "Bearish (-ve) 💩", "Full barbaad ho gaya 💩😫"],
     };
     await registerPoll(groupId, pollInfo, message.from, message.date);
-    await ctx.reply("Request completed, your new poll is ready to schedule.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+    await ctx.reply(`Request completed, your new poll is ready to schedule.\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
       parse_mode: "Markdown",
     });
   } else {
     await ctx.reply(
-      "Request failed, only groups are allowed to create new polls.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-      { parse_mode: "Markdown" }
+      `Request failed, only groups are allowed to create new polls.\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
+      { parse_mode: "Markdown" },
     );
   }
 };
@@ -397,14 +395,14 @@ exports.commandListPoll = async (ctx) => {
         parse_mode: "Markdown",
       });
     } else {
-      await ctx.reply("You don't have any polls yet.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`, {
+      await ctx.reply(`You don't have any polls yet.\nRequested by [${requesterName}](tg://user?id=${requesterId})`, {
         parse_mode: "Markdown",
       });
     }
   } else {
     await ctx.reply(
-      "Request failed, only groups are allowed to use polls feature.\n" + `Requested by [${requesterName}](tg://user?id=${requesterId})`,
-      { parse_mode: "Markdown" }
+      `Request failed, only groups are allowed to use polls feature.\nRequested by [${requesterName}](tg://user?id=${requesterId})`,
+      { parse_mode: "Markdown" },
     );
   }
 };

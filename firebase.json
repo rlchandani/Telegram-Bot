@@ -26,6 +26,7 @@
     "predeploy": [
       "yarn build"
     ],
+    "target": "telegram-website",
     "public": "webApp/home",
     "ignore": [
       "firebase.json",

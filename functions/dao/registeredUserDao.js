@@ -1,12 +1,10 @@
-"use strict";
-
 const functions = require("firebase-functions");
 
 const { firebaseRegisteredUsersRef } = require("../helper/dbHelper");
 
 exports.add = async (userId, userInfo, date) => {
   const snapshot = await this.get(userId);
-  if (snapshot == null || snapshot.first_name != userInfo.first_name) {
+  if (snapshot == null || snapshot.first_name !== userInfo.first_name) {
     userInfo["enabled"] = true;
     userInfo["created_at"] = snapshot != null ? snapshot.created_at : date;
     userInfo["updated_at"] = date;

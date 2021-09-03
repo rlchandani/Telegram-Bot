@@ -1,5 +1,3 @@
-"use strict";
-
 const { firebaseConfig } = require("../helper/firebase_config");
 const countryCodeToFlag = require("country-code-to-flag");
 const RobinhoodWrapper = require("../helper/robinhood_wrapper");
@@ -10,7 +8,7 @@ const _ = require("lodash-contrib");
 const RobinhoodWrapperClient = new RobinhoodWrapper(
   firebaseConfig.robinhood.username,
   firebaseConfig.robinhood.password,
-  firebaseConfig.robinhood.api_key
+  firebaseConfig.robinhood.api_key,
 );
 
 exports.getTopMentionedTickersByCount = async (groupId, days) => {
@@ -24,11 +22,11 @@ exports.getTopMentionedTickersByCount = async (groupId, days) => {
       } else {
         responseTickerInfo[tickerSymbol] = 1;
       }
-    })
+    }),
   );
   const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, Object.keys(responseTickerInfo));
   Object.keys(responseTickerInfo).forEach((symbol) => {
-    const stockQuote = stockListQuote.filter((item) => item.symbol == symbol)[0];
+    const stockQuote = stockListQuote.filter((item) => item.symbol === symbol)[0];
     return stockQuote.setMentionedCount(responseTickerInfo[symbol]);
   });
 
@@ -46,12 +44,12 @@ exports.getTopMentionedTickersByPerformance = async (groupId, days) => {
       if (!symbols.includes(value.symbol)) {
         symbols.push(value.symbol);
       }
-    })
+    }),
   );
   const responseDataNormalized = await orchestrator.getMentionedTickerNormalizedBySymbolsForGroup(groupId, symbols);
   const stockListQuote = await getStockListQuote(RobinhoodWrapperClient, symbols);
   const responseTickerInfo = symbols.map((symbol) => {
-    const stockQuote = stockListQuote.filter((item) => item.symbol == symbol)[0];
+    const stockQuote = stockListQuote.filter((item) => item.symbol === symbol)[0];
     const stockQuoteNormalized = responseDataNormalized.filter((item) => item.symbol === symbol)[0];
     return stockQuote.setFirstMentioned(stockQuoteNormalized.price, stockQuoteNormalized.createdOn);
   });
@@ -95,7 +93,7 @@ exports.getWatchlistTickersByPerformance = async (groupId) => {
 exports.getWatchlistTickersByPerformanceGroupBySector = async (groupId) => {
   const response = await this.getWatchlistTickersByPerformance(groupId);
   return _.mapValues(_.groupBy(response, "sector"), (v) =>
-    _.orderBy(v, ["pl_percentage", "pl", "last_trade_price", "symbol"], ["desc", "desc", "desc", "asc"])
+    _.orderBy(v, ["pl_percentage", "pl", "last_trade_price", "symbol"], ["desc", "desc", "desc", "asc"]),
   );
 };
 
@@ -117,7 +115,7 @@ exports.getStockListQuote = (tickerSymbols) => {
                   resolve(stockQuote);
                 });
               });
-            })
+            }),
         ).then((stockQuotes) => {
           return Promise.all(
             stockQuotes.map((stockQuote) => {
@@ -127,7 +125,7 @@ exports.getStockListQuote = (tickerSymbols) => {
                   resolve(stockQuote);
                 });
               });
-            })
+            }),
           );
         });
         resolve(stockQuotes);

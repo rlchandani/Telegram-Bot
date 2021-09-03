@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 const {
   commandQuote,
@@ -29,7 +27,7 @@ exports.register = (bot) => {
     const replyMessage = await ctx.reply(
       `Welcome ${ctx.update.message.from.first_name},\n\n` +
         "You are now connected to Masala Bot.\n\n" +
-        "Use /help to get the list of supported commands."
+        "Use /help to get the list of supported commands.",
     );
     await registerExpiringMessage(replyMessage.chat.id, replyMessage.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());
     await registerExpiringMessage(message.chat.id, message.message_id, messageAction.DELETE, timeUtil.expireIn3Hours());

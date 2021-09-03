@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "telegram-bot-e91d5"
+  },
+  "targets": {
+    "telegram-bot-e91d5": {
+      "hosting": {
+        "telegram-website": [
+          "telegram-bot-e91d5"
+        ]
+      }
+    }
   }
 }

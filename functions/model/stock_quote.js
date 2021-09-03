@@ -29,7 +29,7 @@ class StockQuote {
     ytdSpy,
     oneYearSpy,
     twoYearSpy,
-    threeYearSpy
+    threeYearSpy,
   ) {
     this.symbol = symbol.toUpperCase();
     this.tickerText = `[${this.symbol}](https://robinhood.com/stocks/${this.symbol})`;
@@ -334,7 +334,7 @@ class StockQuoteBuilder {
       this.ytdSpy,
       this.oneYearSpy,
       this.twoYearSpy,
-      this.threeYearSpy
+      this.threeYearSpy,
     );
   };
 }

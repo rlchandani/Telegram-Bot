@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 const moment = require("moment-timezone");
 const _ = require("lodash-contrib");
@@ -65,7 +63,7 @@ exports.isMarketOpenToday = async (RobinhoodWrapperClient) => {
   const urls = markets.map((market) => market.url + "hours/" + moment().tz("America/Los_Angeles").format("YYYY-MM-DD"));
   const isMarketOpen = urls.map((url) => RobinhoodWrapperClient.getUrl(url));
   return Promise.all(isMarketOpen).then((values) => {
-    return values.filter((v) => v.is_open == true).length > 0;
+    return values.filter((v) => v.is_open === true).length > 0;
   });
 };
 

@@ -1,6 +1,4 @@
 /* eslint-disable require-jsdoc */
-"use strict";
-
 const functions = require("firebase-functions");
 const fs = require("fs");
 const robinhood = require("../lib/robinhood");
@@ -54,7 +52,7 @@ class RobinhoodWrapper {
     if (this.Robinhood == null) {
       this.Robinhood = await this.login();
     }
-    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) != symbol)) : symbols.replace(/[0-9]/g, "");
+    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) !== symbol)) : symbols.replace(/[0-9]/g, "");
     if (_.isEmpty(symbols)) {
       return [];
     }
@@ -106,7 +104,7 @@ class RobinhoodWrapper {
     if (this.Robinhood == null) {
       this.Robinhood = await this.login();
     }
-    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) != symbol)) : symbols.replace(/[0-9]/g, "");
+    symbols = Array.isArray(symbols) ? (symbols = symbols.filter((symbol) => parseInt(symbol) !== symbol)) : symbols.replace(/[0-9]/g, "");
     if (_.isEmpty(symbols)) {
       return [];
     }

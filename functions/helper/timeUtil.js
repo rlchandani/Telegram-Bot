@@ -1,5 +1,3 @@
-"use strict";
-
 const moment = require("moment-timezone");
 
 const isTimeBetween = (startTime, endTime, serverTime) => {

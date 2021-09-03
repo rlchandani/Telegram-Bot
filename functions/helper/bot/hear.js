@@ -1,5 +1,3 @@
-"use strict";
-
 const functions = require("firebase-functions");
 
 exports.register = (bot) => {
