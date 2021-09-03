@@ -1,0 +1,27 @@
+.ui.menu .item.menu-item-dropdown {
+  width: 300px;
+  padding: 0.2em 0.2em 0.2em 0.4em;
+}
+
+/* .ui.segment {
+  overflow: hidden;
+} */
+
+.container-wrapper {
+  margin-top: 1%;
+  /* padding-bottom: 1%; */
+  width: 98% !important;
+}
+
+.ui.segment.footer-segment {
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.footer-segment img {
+  vertical-align: middle;
+  height: 30px;
+}

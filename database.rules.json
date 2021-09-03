@@ -2,7 +2,20 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "registeredUser": {
+      ".read": true,
+      "$userId": {
+        ".indexOn": ".value"
+      },
+      ".indexOn": [
+        "id",
+        "first_name",
+        "is_bot",
+        "username"
+      ]
+    },
     "registeredGroup": {
+      ".read": true,
       "$groupId": {
         ".indexOn": ".value"
       },
@@ -10,6 +23,7 @@
         "id",
         "title",
         "type",
+        "enabled",
         "service/automated_quotes"
       ]
     },

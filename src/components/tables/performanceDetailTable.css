@@ -1,0 +1,58 @@
+/* .ui.table.table-custom{
+    margin: 0;
+    font-size: 0.86em;
+} */
+
+.ui.table.table-custom .ui.form {
+  font-size: 1em;
+}
+
+.ui.table.table-custom thead th.search-header-cell {
+  padding: 0.7px;
+}
+
+.ui.table.table-custom tfoot th {
+  font-weight: 700;
+}
+
+.ui.fluid.input.search-header-cell-field > input {
+  border: 0;
+  border-radius: 0;
+  padding-left: 9px;
+  padding-right: 30px !important;
+  padding-top: 0.92857143em;
+  padding-bottom: 0.92857143em;
+}
+
+.pagination-menu-clearfix {
+  overflow: hidden;
+}
+
+.ui.pagination.menu.top {
+  float: right;
+  margin: 0 0 1em 0;
+}
+
+.ui.pagination.menu.bottom {
+  float: right;
+  margin: 0;
+}
+
+.ui.selection.dropdown.top {
+  float: left;
+  margin: 0;
+}
+
+label {
+  font-weight: bold;
+  padding-right: 2px;
+}
+
+.ui.teal.label.pagination-info {
+  margin: 7px 0 0 10px;
+  float: left;
+}
+
+.ui.celled.table tr td.align-center {
+  text-align: center;
+}

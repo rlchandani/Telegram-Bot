@@ -21,5 +21,22 @@
     "ui": {
       "enabled": true
     }
-  }
+  },
+  "hosting": [{
+    "predeploy": [
+      "yarn build"
+    ],
+    "public": "webApp/home",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }]
 }

@@ -7,7 +7,7 @@ exports.add = async (groupId, userId, day, symbol, price, createdOn) => {
     .child(groupId)
     .child(day)
     .child(symbol)
-    .update({ total: admin.database.ServerValue.increment(1) });
+    .update({ total: admin.database.ServerValue.increment(1), price: price, updatedOn: createdOn });
   await firebaseMentionedTickerNormalizedRef
     .child(groupId)
     .child(day)
