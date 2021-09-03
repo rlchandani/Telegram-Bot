@@ -36,5 +36,7 @@ jobs:
 
       # Runs a firebsae deployment
       - name: Firebase Deploy
+        env: 
+          CI: false
         run: |
           firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
