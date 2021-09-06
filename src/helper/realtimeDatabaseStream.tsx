@@ -1,4 +1,4 @@
-const moment = require("moment-timezone");
+import moment from "moment-timezone";
 
 // Refresh delay to check if connection is still open
 const refreshDelay = 10000; // millis

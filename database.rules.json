@@ -45,6 +45,16 @@
     },
     "mentionedTickerNormalized": {
       ".read": true
+    },
+    "pinnedMessage": {
+      ".read": true,
+      "$groupId": {
+        "$messageId": {
+          ".indexOn": [
+            ".value"
+          ]
+        }
+      }
     }
   }
 }
