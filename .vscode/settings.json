@@ -5,5 +5,13 @@
             "changeProcessCWD": true
         }
     ],
-    "javascript.validate.enable": false
+    "eslint.format.enable": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "eslint.validate": ["javascript", "typescript"],
+    "javascript.validate.enable": false,
+    "eslint.run": "onType",
+    "eslint.packageManager": "npm",
+    "eslint.alwaysShowStatus": true,
 }

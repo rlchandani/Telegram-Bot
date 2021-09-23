@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "typeRoots": ["./types", "./node_modules/@types"]
+  },
+  "compileOnSave": true,
+  "include": ["src", "global.d.ts"],
+  "exclude": ["node_modules"]
+}
