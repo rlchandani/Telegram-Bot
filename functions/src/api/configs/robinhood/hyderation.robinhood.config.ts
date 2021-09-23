@@ -25,6 +25,11 @@ export const robinhoodHydrationConfig: Config = {
     {
       inputConsts: ["lastExtendedHoursTradePrice", "lastTradePrice"],
       mappingFunction: coalesce.mappingFunction,
+      outputValKeys: ["lastExtendedHoursTradePrice"]
+    },
+    {
+      inputConsts: ["lastExtendedHoursTradePrice", "lastTradePrice"],
+      mappingFunction: coalesce.mappingFunction,
       outputValKeys: ["tradePrice"]
     },
     {

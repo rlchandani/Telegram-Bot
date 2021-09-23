@@ -20,7 +20,7 @@ export const concatenate: MappingFunction = {
 export const coalesce: MappingFunction = {
   inputConsts: [],
   mappingFunction: (inputs: (string | number)[], extras: any[]) => {
-    return [inputs.find((_: any) => ![null, undefined].includes(_))];
+    return [inputs.find((_: any) => ![null, undefined].includes(_)) ?? 0.0];
   },
   outputValKeys: []
 };
@@ -111,7 +111,7 @@ export const displayMessageStockQuote: MappingFunction = {
     const todayAfterHourDiff = inputs[4];
     const todayAfterHourPLPercentage = inputs[5];
     const todayAfterHourPLIcon = getPriceMovementIcon(todayAfterHourPLPercentage);
-    const todayFullDayDiff = inputs[6];
+    // const todayFullDayDiff = inputs[6];
     const todayFullDayPLPercentage = inputs[7];
     const todayFullDayPLIcon = getPriceMovementIcon(todayFullDayPLPercentage);
     const marketCap = inputs[8];
@@ -126,10 +126,10 @@ export const displayMessageStockQuote: MappingFunction = {
       "Not Available" :
       `\n😍 ${roundToTwo(numBuyRatingPercentage)}%, 🥶 ${roundToTwo(numHoldRatingPercentage)}%, 🤬 ${roundToTwo(numSellRatingPercentage)}%`;
     const msg = `*Ticker:* ${tickerText} ${countryFlag} (${country})${marketCapIcon}\n` +
-      `*Price:* $${roundToTwo(tradePrice)}\n` +
-      `*Market Hours:* $${roundToTwo(todayDiff)} (${roundToTwo(todayPLPercentage)}%)${todayPLIcon}\n` +
-      `*After Hours:* $${roundToTwo(todayAfterHourDiff)} (${roundToTwo(todayAfterHourPLPercentage)}%)${todayAfterHourPLIcon}\n` +
-      `*Today:* $${roundToTwo(todayFullDayDiff)} (${roundToTwo(todayFullDayPLPercentage)}%)${todayFullDayPLIcon}\n` +
+      `*Price:* $${roundToTwo(tradePrice)} (${roundToTwo(todayFullDayPLPercentage)}%)${todayFullDayPLIcon}\n` +
+      `*Market Hrs:* $${roundToTwo(todayDiff)} (${roundToTwo(todayPLPercentage)}%)${todayPLIcon}\n` +
+      `*After Hrs:* $${roundToTwo(todayAfterHourDiff)} (${roundToTwo(todayAfterHourPLPercentage)}%)${todayAfterHourPLIcon}\n` +
+      // `*Today:* $${roundToTwo(todayFullDayDiff)} (${roundToTwo(todayFullDayPLPercentage)}%)${todayFullDayPLIcon}\n` +
       `*Rating:* ${ratingMsg}\n`;
     return [msg];
   },
