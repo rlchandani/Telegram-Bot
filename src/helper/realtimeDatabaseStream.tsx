@@ -4,8 +4,11 @@ import moment from "moment-timezone";
 const refreshDelay = 10000; // millis
 const isDebug = window.location.hostname === "localhost" ? true : false;
 const todayEpoch = moment().tz("America/Los_Angeles").startOf("day").unix();
+const todayWeekEpoch = moment().tz("America/Los_Angeles").startOf("week").unix();
 const startEpoch = moment().tz("America/Los_Angeles").startOf("day").subtract(1, "days").unix();
 const endEpoch = todayEpoch;
+const weekStartEpoch = moment().tz("America/Los_Angeles").startOf("week").unix();
+const weekEndEpoch = moment().tz("America/Los_Angeles").endOf("week").unix();
 
 class RegisteredUserConfig {
   static debug = {
@@ -64,14 +67,14 @@ class MentionedTickerConfig {
   }
 }
 
-class MentionedTickerNormalizedConfig {
+class MentionedTickerNormalizedDailyConfig {
   static debug = {
-    baseURL: "http://localhost:9000/mentionedTickerNormalized",
+    baseURL: "http://localhost:9000/mentionedTickerNormalizedDaily",
     params: `ns=telegram-bot-e91d5-default-rtdb&print=pretty&timeout=1s&orderBy=%22$key%22&startAt=%22${startEpoch}%22&endAt=%22${endEpoch}%22`,
     testGroupId: -431765838,
   };
   static prod = {
-    baseURL: "https://telegram-bot-e91d5-default-rtdb.firebaseio.com/mentionedTickerNormalized",
+    baseURL: "https://telegram-bot-e91d5-default-rtdb.firebaseio.com/mentionedTickerNormalizedDaily",
     params: `print=pretty&timeout=1s&orderBy=%22$key%22&equalTo=%22${todayEpoch}%22`,
     testGroupId: -589891838,
   };
@@ -84,9 +87,31 @@ class MentionedTickerNormalizedConfig {
   }
 }
 
-// Eventsource endpoint
-// const registeredGroupURL = RegisteredGroup.getURL();
-// const mentionedTickerURL = MentionedTicker.getURL();
-// const mentionedTickerNormalizedURL = MentionedTickerNormalized.getURL();
+class MentionedTickerNormalizedWeeklyConfig {
+  static debug = {
+    baseURL: "http://localhost:9000/mentionedTickerNormalizedWeekly",
+    params: `ns=telegram-bot-e91d5-default-rtdb&print=pretty&timeout=1s&orderBy=%22$key%22&startAt=%22${weekStartEpoch}%22&endAt=%22${weekEndEpoch}%22`,
+    testGroupId: -431765838,
+  };
+  static prod = {
+    baseURL: "https://telegram-bot-e91d5-default-rtdb.firebaseio.com/mentionedTickerNormalizedWeekly",
+    params: `print=pretty&timeout=1s&orderBy=%22$key%22&equalTo=%22${todayWeekEpoch}%22`,
+    testGroupId: -589891838,
+  };
 
-export { RegisteredUserConfig, RegisteredGroupConfig, MentionedTickerConfig, MentionedTickerNormalizedConfig, refreshDelay };
+  static getURL(groupId?: string) {
+    if (isDebug) {
+      return `${this.debug.baseURL}/${groupId || this.debug.testGroupId}.json?${this.debug.params}`;
+    }
+    return `${this.prod.baseURL}/${groupId || this.prod.testGroupId}.json?${this.prod.params}`;
+  }
+}
+
+export {
+  RegisteredUserConfig,
+  RegisteredGroupConfig,
+  MentionedTickerConfig,
+  MentionedTickerNormalizedDailyConfig,
+  MentionedTickerNormalizedWeeklyConfig,
+  refreshDelay,
+};

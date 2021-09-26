@@ -7,8 +7,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { Container, Menu, Dropdown, Message, Segment, Divider, Header } from "semantic-ui-react";
 import PerformanceDetailTable, { PerformanceDetailTableOptions } from "../../components/tables/PerformanceDetailTable";
 import "../../helper/initFirebase";
-import { MentionedTickerNormalizedConfig, refreshDelay } from "../../helper/realtimeDatabaseStream";
-import { patch, put } from "../../store/mentionedTickerNormalized";
+import { MentionedTickerNormalizedDailyConfig, MentionedTickerNormalizedWeeklyConfig, refreshDelay } from "../../helper/realtimeDatabaseStream";
+import * as mentionedTickerNormalizedDaily from "../../store/mentionedTickerNormalizedDaily";
+import * as mentionedTickerNormalizedWeekly from "../../store/mentionedTickerNormalizedWeekly";
 import { fetchRegisteredGroups, RegisteredGroupState } from "../../store/registeredGroup";
 import { fetchRegisteredUsers, RegisteredUserState } from "../../store/registeredUser";
 // import { getDatabase, connectDatabaseEmulator, ref, set } from "firebase/database";
@@ -24,12 +25,14 @@ const Home = () => {
   const dispatch = useDispatch();
   const registeredUser: RegisteredUserState = useSelector((state: any) => state.registeredUser);
   const registeredGroup: RegisteredGroupState = useSelector((state: any) => state.registeredGroup);
-  const mentionedTickerNormalized = useSelector((state: any) => state.mentionedTickerNormalized);
+  const mentionedTickerNormalizedDailyStore = useSelector((state: any) => state.mentionedTickerNormalizedDaily);
+  const mentionedTickerNormalizedWeeklyStore = useSelector((state: any) => state.mentionedTickerNormalizedWeekly);
 
   let ping = new Date();
   const [activeMenuItem, setActiveMenuItem] = useState("home");
   const [groupDropdownOptions, setGroupDropdownOptions] = useState<any>([]);
-  const [eventSource, setEventSource] = useState<EventSource | undefined | null>();
+  const [dailyEventSource, setDailyEventSource] = useState<EventSource | undefined | null>();
+  const [weeklyEventSource, setWeeklyEventSource] = useState<EventSource | undefined | null>();
   const [ttlTimer, setTtlTimer] = useState<any>();
   const [dailyTableData, setDailyTableData] = useState<PerformanceDetailTableOptions.TableData[]>([]);
   const [weeklyTableData, setWeeklyTableData] = useState<PerformanceDetailTableOptions.TableData[]>([]);
@@ -46,55 +49,56 @@ const Home = () => {
     dispatch(fetchRegisteredGroups());
   };
 
-  const startListener = (groupId: any) => {
+  const startListener = (groupId: any) => { 
     // Terminate existing connection
-    eventSource?.close();
+    dailyEventSource?.close();
+    weeklyEventSource?.close();
     // Clearning interval
     clearInterval(ttlTimer);
 
-    // Starting listener
+    // Starting listener for MentionedTickerNormalizedDaily
     if (groupId) {
-      const tempEventSource = new EventSource(MentionedTickerNormalizedConfig.getURL(groupId));
+      const tempDailyEventSource = new EventSource(MentionedTickerNormalizedDailyConfig.getURL(groupId));
 
       // listen on ping from server, keep time
-      tempEventSource.addEventListener("keep-alive", () => {
-        console.log("Keep-Alive event:", new Date());
+      tempDailyEventSource.addEventListener("keep-alive", () => {
+        console.log("MentionedTickerNormalizedDaily Keep-Alive event:", new Date());
         ping = new Date();
         setRefreshData(ping);
       });
 
       // listen for database PUT operations
-      tempEventSource.addEventListener("put", (e: any) => {
+      tempDailyEventSource.addEventListener("put", (e: any) => {
         ping = new Date();
-        dispatch(put(JSON.parse(e.data)));
+        dispatch(mentionedTickerNormalizedDaily.put(JSON.parse(e.data)));
       });
 
       // listen for database PATCH operations
-      tempEventSource.addEventListener("patch", (e: any) => {
+      tempDailyEventSource.addEventListener("patch", (e: any) => {
         ping = new Date();
-        dispatch(patch(JSON.parse(e.data)));
+        dispatch(mentionedTickerNormalizedDaily.patch(JSON.parse(e.data)));
       });
 
       // listen for database CANCEL operations
-      tempEventSource.addEventListener("cancel", (e: any) => {
-        console.log("CANCEL event:", e.data);
+      tempDailyEventSource.addEventListener("cancel", (e: any) => {
+        console.log("MentionedTickerNormalizedDaily CANCEL event:", e.data);
       });
 
       // listen for database OPEN operations
-      tempEventSource.addEventListener("open", () => {
-        console.log("Open SSE connection");
+      tempDailyEventSource.addEventListener("open", () => {
+        console.log("Open MentionedTickerNormalizedDaily SSE connection");
         ping = new Date();
         setRefreshData(ping);
       });
 
       // listen for database CLOSE operations
-      tempEventSource.addEventListener("close", () => {
-        console.log("Close SSE connection");
+      tempDailyEventSource.addEventListener("close", () => {
+        console.log("Close MentionedTickerNormalizedDaily SSE connection");
         setRefreshData(ping);
       });
 
       // listen for database ERROR operations
-      tempEventSource.addEventListener("error", (e: any) => {
+      tempDailyEventSource.addEventListener("error", (e: any) => {
         if (e.type === "error") {
           console.error("Connection error:", e.message);
         } else if (e.type === "exception") {
@@ -102,21 +106,72 @@ const Home = () => {
         }
         console.error("Unknown exception:", e);
       });
-
-      // check if the realtime connection is dead, reload client if dead
-      const tempTtlTimer = setInterval(() => {
-        let now = new Date().getTime();
-        let diff = (now - ping.getTime()) / 1000;
-        // haven't heard from the server in 20 secs?
-        if (diff > 45) {
-          // hard reload of client
-          window.location.reload();
-        }
-      }, refreshDelay);
-
-      setEventSource(tempEventSource);
-      setTtlTimer(tempTtlTimer);
+      setDailyEventSource(tempDailyEventSource);
     }
+
+    // Starting listener for MentionedTickerNormalizedWeekly
+    if (groupId) {
+      const tempWeeklyEventSource = new EventSource(MentionedTickerNormalizedWeeklyConfig.getURL(groupId));
+
+      // listen on ping from server, keep time
+      tempWeeklyEventSource.addEventListener("keep-alive", () => {
+        console.log("MentionedTickerNormalizedDaily Keep-Alive event:", new Date());
+        ping = new Date();
+        setRefreshData(ping);
+      });
+
+      // listen for database PUT operations
+      tempWeeklyEventSource.addEventListener("put", (e: any) => {
+        ping = new Date();
+        dispatch(mentionedTickerNormalizedWeekly.put(JSON.parse(e.data)));
+      });
+
+      // listen for database PATCH operations
+      tempWeeklyEventSource.addEventListener("patch", (e: any) => {
+        ping = new Date();
+        dispatch(mentionedTickerNormalizedWeekly.patch(JSON.parse(e.data)));
+      });
+
+      // listen for database CANCEL operations
+      tempWeeklyEventSource.addEventListener("cancel", (e: any) => {
+        console.log("MentionedTickerNormalizedDaily CANCEL event:", e.data);
+      });
+
+      // listen for database OPEN operations
+      tempWeeklyEventSource.addEventListener("open", () => {
+        console.log("Open MentionedTickerNormalizedWeekly SSE connection");
+        ping = new Date();
+        setRefreshData(ping);
+      });
+
+      // listen for database CLOSE operations
+      tempWeeklyEventSource.addEventListener("close", () => {
+        console.log("Close MentionedTickerNormalizedDaily SSE connection");
+        setRefreshData(ping);
+      });
+
+      // listen for database ERROR operations
+      tempWeeklyEventSource.addEventListener("error", (e: any) => {
+        if (e.type === "error") {
+          console.error("Connection error:", e.message);
+        } else if (e.type === "exception") {
+          console.error("Error:", e.message, e.error);
+        }
+        console.error("Unknown exception:", e);
+      });
+      setWeeklyEventSource(tempWeeklyEventSource);
+    }
+    // check if the realtime connection is dead, reload client if dead
+    const tempTtlTimer = setInterval(() => {
+      let now = new Date().getTime();
+      let diff = (now - ping.getTime()) / 1000;
+      // haven't heard from the server in 20 secs?
+      if (diff > 45) {
+        // hard reload of client
+        window.location.reload();
+      }
+    }, refreshDelay);
+    setTtlTimer(tempTtlTimer);
   };
 
   useEffect(() => {
@@ -139,11 +194,11 @@ const Home = () => {
     if (
       registeredUser.status !== "error" &&
       !_.isEmpty(registeredUser.data) &&
-      mentionedTickerNormalized.status !== "error" &&
-      !_.isEmpty(mentionedTickerNormalized.data)
+      mentionedTickerNormalizedDailyStore.status !== "error" &&
+      !_.isEmpty(mentionedTickerNormalizedDailyStore.data)
     ) {
       const tempTableData: any = [];
-      _.map(mentionedTickerNormalized.data, (tickers, date: number) => {
+      _.map(mentionedTickerNormalizedDailyStore.data, (tickers, date: number) => {
         _.map(tickers, (tickerData, ticker) => {
           const tempUserInfo = _.map(tickerData.users, (userStats, userId) => ({
             first_name: _.find(registeredUser.data, (userInfo, uId) => uId === userId)?.first_name,
@@ -170,12 +225,58 @@ const Home = () => {
       setDailyTableData(tempTableData);
     } else {
       setDailyTableData([]);
+    }
+  }, [mentionedTickerNormalizedDailyStore, registeredUser, refreshData]);
+
+  useEffect(() => {
+    if (
+      registeredUser.status !== "error" &&
+      !_.isEmpty(registeredUser.data) &&
+      mentionedTickerNormalizedWeeklyStore.status !== "error" &&
+      !_.isEmpty(mentionedTickerNormalizedWeeklyStore.data)
+    ) {
+      const tempTableData: any = [];
+      _.map(mentionedTickerNormalizedWeeklyStore.data, (tickers, date: number) => {
+        _.map(tickers, (tickerData, ticker) => {
+          const tempUserInfo = _.map(tickerData.users, (userStats, userId) => ({
+            first_name: _.find(registeredUser.data, (userInfo, uId) => uId === userId)?.first_name,
+            total: userStats.total,
+          }));
+          const updatedOnObject = moment.unix(tickerData.updatedOn);
+          const updatedOn = updatedOnObject.isSame(new Date(), "day") ? updatedOnObject.fromNow() : updatedOnObject.format("h:mm A");
+          const tempData = {
+            date: moment.unix(date).format("YYYY-MM-DD"),
+            ticker: `<a href='https://robinhood.com/stocks/${ticker}' target='_blank'>${ticker}</a>&nbsp;<a class="ui label">$${tickerData.price}</a>`,
+            total: tickerData.total,
+            unique_user: _.size(tempUserInfo),
+            appendix: _.chain(tempUserInfo)
+              .sortBy(["total", "first_name"])
+              .reverse()
+              .map((d) => `<div class="ui teal label">${d.first_name}<div class="detail">${d.total}</div></div>`)
+              .join("&nbsp;")
+              .value(),
+            updated_on: updatedOn,
+          };
+          tempTableData.push(tempData);
+        });
+      });
+      setWeeklyTableData(tempTableData);
+    } else {
       setWeeklyTableData([]);
     }
-  }, [mentionedTickerNormalized, registeredUser, refreshData]);
+  }, [mentionedTickerNormalizedWeeklyStore, registeredUser, refreshData]);
 
-  const tableHeader: PerformanceDetailTableOptions.TableHeader = {
+  const dailyTableHeader: PerformanceDetailTableOptions.TableHeader = {
     1: { key: "date", value: "Date" },
+    2: { key: "ticker", value: "Ticker" },
+    3: { key: "total", value: "Total Mentioned" },
+    4: { key: "unique_user", value: "Total Users" },
+    5: { key: "appendix", value: "Appendix" },
+    6: { key: "updated_on", value: "Last Mentioned" },
+  };
+
+  const weeklyTableHeader: PerformanceDetailTableOptions.TableHeader = {
+    1: { key: "date", value: "Week Start Date" },
     2: { key: "ticker", value: "Ticker" },
     3: { key: "total", value: "Total Mentioned" },
     4: { key: "unique_user", value: "Total Users" },
@@ -205,7 +306,7 @@ const Home = () => {
               options={groupDropdownOptions}
               selectOnBlur={false}
               onChange={(e, d) => {
-                startListener(d.value)
+                startListener(d.value);
                 setSelectedGroup(d.value);
               }}
               value={selectedGroup}
@@ -219,7 +320,7 @@ const Home = () => {
       </Header>
       <Segment attached>
         <PerformanceDetailTable
-          tableHeader={tableHeader}
+          tableHeader={dailyTableHeader}
           tableData={dailyTableData}
           sortOptions={defaultSortOptions}
           sortable
@@ -233,7 +334,7 @@ const Home = () => {
       </Header>
       <Segment attached>
         <PerformanceDetailTable
-          tableHeader={tableHeader}
+          tableHeader={weeklyTableHeader}
           tableData={weeklyTableData}
           sortOptions={defaultSortOptions}
           sortable

@@ -11,7 +11,8 @@ const firebaseMessageRef = admin.database().ref("/message/");
 const firebaseExpiringMessageRef = admin.database().ref("/expiringMessage/");
 const firebasePinnedMessageRef = admin.database().ref("/pinnedMessage/");
 const firebaseMentionedTickerRef = admin.database().ref("/mentionedTicker/");
-const firebaseMentionedTickerNormalizedRef = admin.database().ref("/mentionedTickerNormalized/");
+const firebaseMentionedTickerNormalizedDailyRef = admin.database().ref("/mentionedTickerNormalizedDaily/");
+const firebaseMentionedTickerNormalizedWeeklyRef = admin.database().ref("/mentionedTickerNormalizedWeekly/");
 const firebaseWatchlistRef = admin.database().ref("/watchlist/");
 const firebasePaperTradeRef = admin.database().ref("/paperTrade/");
 
@@ -23,7 +24,8 @@ export {
   firebaseExpiringMessageRef,
   firebasePinnedMessageRef,
   firebaseMentionedTickerRef,
-  firebaseMentionedTickerNormalizedRef,
+  firebaseMentionedTickerNormalizedDailyRef,
+  firebaseMentionedTickerNormalizedWeeklyRef,
   firebaseWatchlistRef,
   firebasePaperTradeRef
 };

@@ -1,10 +1,12 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import mentionedTickerNormalized from "./mentionedTickerNormalized";
+import mentionedTickerNormalizedDaily from "./mentionedTickerNormalizedDaily";
+import mentionedTickerNormalizedWeekly from "./mentionedTickerNormalizedWeekly";
 import registeredGroup from "./registeredGroup";
 import registeredUser from "./registeredUser";
 
 const reducer = combineReducers({
-  mentionedTickerNormalized,
+  mentionedTickerNormalizedDaily,
+  mentionedTickerNormalizedWeekly,
   registeredGroup,
   registeredUser,
 });

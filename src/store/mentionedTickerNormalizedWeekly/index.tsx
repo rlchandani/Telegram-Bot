@@ -3,14 +3,14 @@ import { MentionedTickerNormalized } from "../../models/types.mentionedTickerNor
 import { RealtimeDatabase } from "../../models/types.realtimeDatabase";
 import { patchProcessor, putProcessor } from "../helpers/util.helpers";
 
-interface MentionedTickerNormalizedState {
+interface MentionedTickerNormalizedWeeklyState {
   data: MentionedTickerNormalized.Record;
 }
 
-const initialState: MentionedTickerNormalizedState = { data: {} };
+const initialState: MentionedTickerNormalizedWeeklyState = { data: {} };
 
-const mentionedTickerNormalizedSlice = createSlice({
-  name: "mentionedTickerNormalized",
+const mentionedTickerNormalizedWeeklySlice = createSlice({
+  name: "mentionedTickerNormalizedWeekly",
   initialState,
   reducers: {
     put: (state, action: PayloadAction<RealtimeDatabase.StreamPayload>) => {
@@ -25,5 +25,5 @@ const mentionedTickerNormalizedSlice = createSlice({
 });
 
 // Action creators are generated for each case reducer function
-export const { put, patch } = mentionedTickerNormalizedSlice.actions;
-export default mentionedTickerNormalizedSlice.reducer;
+export const { put, patch } = mentionedTickerNormalizedWeeklySlice.actions;
+export default mentionedTickerNormalizedWeeklySlice.reducer;

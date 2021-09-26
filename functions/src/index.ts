@@ -15,7 +15,8 @@ import {
   indiaHoliday,
   usaHoliday,
   getMentionedTickerByDayForGroup,
-  addMentionedTickerNormalized
+  addMentionedTickerNormalizedDaily,
+  addMentionedTickerNormalizedWeekly
 } from "./orchestrators";
 import { is9AM, is4PM } from "./helper/timeUtil";
 import { isMarketOpenToday } from "./helper/utils";
@@ -116,7 +117,8 @@ exports.debug = runWith({
             for (const [key, value] of _.entries(mentionedTickers)) {
               logger.log(`Processing: ${key}: ${JSON.stringify(value)}`);
               // TODO: Need to uncomment this
-              await addMentionedTickerNormalized(group.id, value.userId, value.symbol, value.price, value.day, value.createdOn);
+              await addMentionedTickerNormalizedDaily(group.id, value.userId, value.symbol, value.price, value.day, value.createdOn);
+              await addMentionedTickerNormalizedWeekly(group.id, value.userId, value.symbol, value.price, value.day, value.createdOn);
             }
           }
         }
@@ -142,7 +144,15 @@ exports.mentionedTickerOnCreateTrigger = database
   .onCreate((snapshot, context) => {
     // Grab the current value of what was written to the Realtime Database.
     const original = snapshot.val();
-    return addMentionedTickerNormalized(
+    addMentionedTickerNormalizedDaily(
+      context.params.groupId,
+      original.userId,
+      original.symbol,
+      original.price,
+      original.day,
+      original.createdOn
+    );
+    addMentionedTickerNormalizedWeekly(
       context.params.groupId,
       original.userId,
       original.symbol,

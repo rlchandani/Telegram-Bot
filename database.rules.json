@@ -43,7 +43,10 @@
         ]
       }
     },
-    "mentionedTickerNormalized": {
+    "mentionedTickerNormalizedDaily": {
+      ".read": true
+    },
+    "mentionedTickerNormalizedWeekly": {
       ".read": true
     },
     "pinnedMessage": {

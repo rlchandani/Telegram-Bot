@@ -1,21 +1,21 @@
 import admin from "firebase-admin";
 import { logger } from "firebase-functions";
-import { firebaseMentionedTickerNormalizedRef } from "../helper/dbHelper";
-import { MentionedTickerNormalizedRecord } from "../model/dao/mentionedTickerNormalized.model";
+import { firebaseMentionedTickerNormalizedWeeklyRef } from "../helper/dbHelper";
+import { MentionedTickerNormalizedWeeklyRecord } from "../model/dao";
 
-const add = async (groupId: any, userId: any, day: any, symbol: any, price: any, createdOn: any): Promise<boolean> => {
-  await firebaseMentionedTickerNormalizedRef
+const add = async (groupId: any, userId: any, week: any, symbol: any, price: any, createdOn: any): Promise<boolean> => {
+  await firebaseMentionedTickerNormalizedWeeklyRef
     .child(groupId)
-    .child(day)
+    .child(week)
     .child(symbol)
     .update({
       total: admin.database.ServerValue.increment(1),
       price: price,
       updatedOn: createdOn
     });
-  await firebaseMentionedTickerNormalizedRef
+  await firebaseMentionedTickerNormalizedWeeklyRef
     .child(groupId)
-    .child(day)
+    .child(week)
     .child(symbol)
     .child("users")
     .child(userId)
@@ -26,10 +26,10 @@ const add = async (groupId: any, userId: any, day: any, symbol: any, price: any,
   return true;
 };
 
-const get = async (groupId: any, day: any): Promise<MentionedTickerNormalizedRecord> => {
-  return firebaseMentionedTickerNormalizedRef
+const get = async (groupId: any, week: any): Promise<MentionedTickerNormalizedWeeklyRecord> => {
+  return firebaseMentionedTickerNormalizedWeeklyRef
     .child(groupId)
-    .child(day)
+    .child(week)
     .once("value")
     .then((data) => {
       return data.val() !== null ? data.val() : null;
@@ -40,10 +40,10 @@ const get = async (groupId: any, day: any): Promise<MentionedTickerNormalizedRec
     });
 };
 
-const getTickerBySybolsForGroup = async (groupId: any, symbols = []): Promise<MentionedTickerNormalizedRecord[]> => {
+const getTickerBySybolsForGroup = async (groupId: any, symbols = []): Promise<MentionedTickerNormalizedWeeklyRecord[]> => {
   const promises = symbols.map(async (symbol) => {
     try {
-      const data = await firebaseMentionedTickerNormalizedRef
+      const data = await firebaseMentionedTickerNormalizedWeeklyRef
         .child(groupId)
         // .child(symbol)
         .once("value");
