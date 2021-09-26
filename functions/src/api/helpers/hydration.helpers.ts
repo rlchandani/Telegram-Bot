@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { logger } from "firebase-functions";
 import HyderationConfig from "../configs/hyderation.config";
 import { reduceCallResultsIntoMap, replaceWildcards } from "./integration.helpers";
 import { Config, DisplayConfig, NodeHydrationValues } from "../models/types.hydration";
@@ -53,7 +54,7 @@ export function createDisplayParameters(
       const displayName = mapping.displayName;
       const displayValue = constMapEntry.get(mapping.constName);
       if (_.isUndefined(displayValue)) {
-        console.log("Value not found for constant " + mapping.constName);
+        logger.log("Value not found for constant " + mapping.constName);
         return {
           name: displayName,
           value: "Not Found"

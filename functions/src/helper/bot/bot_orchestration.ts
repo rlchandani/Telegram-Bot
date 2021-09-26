@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { logger } from "firebase-functions";
 import { firebaseConfig } from "../firebase_config";
 import { Markup } from "telegraf";
 import { RobinhoodWrapper } from "../robinhood_wrapper";
@@ -323,7 +324,6 @@ const _sendMessage = async (
 export const commandSp500Up = async (ctx: any) => {
   const message = ctx.update.message;
   const response = await RobinhoodWrapperClient.getSP500Up();
-  console.log(response);
   if ("results" in response) {
     const results = response.results;
     const tickerSymbols = results.map((s: any) => s.symbol);
@@ -490,7 +490,7 @@ export const onText = async (ctx: any) => {
         stockQuote.appendix?.symbol
       ));
       if (!_.isEmpty(isReplyToPinnedMessage)) {
-        console.log(isReplyToPinnedMessage);
+        logger.log(isReplyToPinnedMessage);
       }
     });
     if (await checkIfServiceActiveOnGroup(groupId, "automated_quotes")) {

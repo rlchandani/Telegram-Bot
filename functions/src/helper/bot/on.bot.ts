@@ -29,7 +29,7 @@ export const botRegisterOn = (bot: any) => {
         input_message_content: { message_text: title },
         reply_markup: Markup.inlineKeyboard([Markup.button.url("Go to recipe", href)])
       }));
-    console.log(recipes);
+    logger.log(recipes);
     ctx.answerInlineQuery(recipes);
   });
   /*

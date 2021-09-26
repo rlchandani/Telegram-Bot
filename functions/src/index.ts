@@ -121,12 +121,14 @@ exports.debug = runWith({
           }
         }
         break;
-      default:
+      case "hyderateValues":
         await generateHydrationValues(["TSLA", "BMG"]).then((result) => {
           result.forEach((entry) => {
-            console.log(entry);
+            logger.log(entry);
           });
         });
+        break;
+      default:
         msg = "Action not defined";
     }
   }
