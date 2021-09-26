@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAnalytics } from "firebase/analytics";
 import { getMessaging, onMessage, getToken } from "firebase/messaging";
 
@@ -20,6 +21,15 @@ const messageWebPushCertificate = "BJQ5zRoUxkqtktq3Z4wBm_ZJw7_xKDaw4NzSDpQo983oZ
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 getAnalytics(app);
+
+// Pass your reCAPTCHA v3 site key (public key) to activate(). Make sure this
+// key is the counterpart to the secret key you set in the Firebase console.
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("6LcJ440cAAAAACOBoLvOs95bYvgbZeo_imHgy-WB"),
+  // Optional argument. If true, the SDK automatically refreshes App Check
+  // tokens as needed.
+  isTokenAutoRefreshEnabled: true,
+});
 
 export const getTokenAction = (isTokenFound: boolean, setTokenFound: any) => {
   if (!isTokenFound) {
