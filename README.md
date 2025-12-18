@@ -278,5 +278,5 @@ This project is licensed under the ISC License.
 ---
 
 <p align="center">
-  Made with ❤️ by iRedlof Intelligence
+  Made with ❤️ by iRedlof Team
 </p>
