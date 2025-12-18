@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Google Maps Geocoding Types
@@ -106,9 +105,6 @@ export interface WeatherData {
     }[];
 }
 
-// Map Google Weather Condition Types to WMO codes
-
-
 export async function getWeatherData(query: string): Promise<WeatherData> {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
@@ -186,22 +182,12 @@ export async function getWeatherData(query: string): Promise<WeatherData> {
 
         const windSpeed = isImperial ? toMph(current.wind.speed.value) : current.wind.speed.value;
 
-        // Visibility: 'distance' typically in meters from API? Need to check. 
-        // Debug script showed: "visibility": { "unit": "KILOMETERS", "distance": 16 }
-        // If unit is KM, logic differs. Let's assume input is KILOMETERS if unit says so, or meters?
-        // Debug output said unit: KILOMETERS.
-        // If unit is KILOMETERS, we don't need to divide by 1000 for metric.
-        // Let's protect against unit variation.
-        let visibility = current.visibility.distance; // Assuming Matches unit in response
-        // Actually, if response says KILOMETERS, let's use it.
-        // If Imperial, convert KM -> Miles.
+        let visibility = current.visibility.distance;
         if (current.visibility.unit === 'METERS') {
-            visibility = visibility / 1000; // Convert meters to kilometers
+            visibility = visibility / 1000;
         }
-
-        // Now visibility is in KM.
         if (isImperial) {
-            visibility = toMiles(visibility); // km to miles
+            visibility = toMiles(visibility);
         }
 
         return {
@@ -226,8 +212,9 @@ export async function getWeatherData(query: string): Promise<WeatherData> {
             hourly: hourlyData
         };
 
-    } catch (error: any) {
-        console.error('Error fetching weather data from Google:', error?.response?.data || error.message || error);
+    } catch (error) {
+        const err = error as { response?: { data?: unknown }; message?: string };
+        console.error('Error fetching weather data from Google:', err.response?.data || err.message || error);
         throw error;
     }
 }

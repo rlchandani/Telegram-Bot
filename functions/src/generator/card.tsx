@@ -17,15 +17,10 @@ export interface CardProps {
 }
 
 // Helper to load font
-const loadFont = () => {
-    try {
-        const fontPath = path.join(process.cwd(), 'assets', 'fonts', 'Roboto-Regular.woff');
-        return fs.readFileSync(fontPath);
-    } catch (e) {
-        console.error("Coordinate check: failed to load font at", path.join(process.cwd(), 'assets', 'fonts', 'Roboto-Regular.woff'), e);
-        throw e;
-    }
-}
+const loadFont = (): Buffer => {
+    const fontPath = path.join(process.cwd(), 'assets', 'fonts', 'Roboto-Regular.woff');
+    return fs.readFileSync(fontPath);
+};
 
 const fontData = loadFont();
 
@@ -319,7 +314,6 @@ const WeatherCard = ({ data }: { data: WeatherData }) => {
         }}>
             {/* 1. Header Section */}
             <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '40px' }}>
-                {/* Location Header */}
                 {/* Location Header */}
                 <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: '20px' }}>
                     <LocationIcon color={wColors.textDim} size={42} />

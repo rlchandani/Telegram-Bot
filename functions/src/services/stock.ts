@@ -1,5 +1,6 @@
 import YahooFinance from 'yahoo-finance2';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const yahooFinance = new (YahooFinance as any)({
     suppressNotices: ['yahooSurvey']
 });
@@ -27,7 +28,7 @@ export async function getStockData(input: string): Promise<StockData> {
             yahooFinance.quote(symbol),
             yahooFinance.chart(symbol, { period1: startOfYear }),
             yahooFinance.chart('SPY', { period1: startOfYear })
-        ]) as [any, any, any];
+        ]);
 
         const quote = quoteResult;
         const price = quote.regularMarketPrice || 0;
