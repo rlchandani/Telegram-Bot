@@ -1,0 +1,13 @@
+# Compiled JavaScript files
+lib/
+tsc-out/
+
+# Node modules
+node_modules/
+
+# Logs
+firebase-debug.log*
+npm-debug.log*
+
+# Environment
+.env*
