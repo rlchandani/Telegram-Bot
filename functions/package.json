@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "serve": "npm run build && firebase emulators:start --only functions --project demo-test",
+    "serve": "export PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" && npm run build && firebase emulators:start --only functions,firestore --project demo-test",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",

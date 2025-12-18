@@ -185,6 +185,8 @@ Once the webhook is set, test in Telegram:
 | `$AAPL` | Get Apple stock card |
 | `$AAPL $MSFT $GOOG` | Get multi-stock card |
 | `Weather London` | Get weather card for London |
+| `/start` | Activate bot interactions in current group (Admins only) |
+| `/stop` | Deactivate bot interactions in current group (Admins only) |
 
 ---
 

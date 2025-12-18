@@ -7,6 +7,7 @@ node_modules/
 
 # Logs
 firebase-debug.log*
+firestore-debug.log*
 npm-debug.log*
 
 # Environment
