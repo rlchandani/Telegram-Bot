@@ -3,7 +3,7 @@ name: Deploy to Firebase Functions
 on:
   push:
     branches:
-      - main
+      - antigravity
   workflow_dispatch:
 
 jobs:
