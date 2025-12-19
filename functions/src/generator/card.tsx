@@ -50,6 +50,12 @@ const renderArrow = (isNeg: boolean) => (
     </svg>
 );
 
+const truncateName = (name: string | undefined, maxLength: number = 30): string => {
+    if (!name) return '';
+    if (name.length <= maxLength) return name;
+    return name.slice(0, maxLength) + '…';
+};
+
 const StockCard = ({ data }: { data: StockData }) => {
     const isChangeNeg = data.changePercent < 0;
     const isYtdNeg = data.ytdChangePercent < 0;
@@ -77,7 +83,7 @@ const StockCard = ({ data }: { data: StockData }) => {
                 <span style={{ fontSize: '64px', fontWeight: 'bold' }}>${data.price.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', color: colors.textDim, fontSize: '24px', marginBottom: '32px' }}>
-                {data.longName}
+                {truncateName(data.longName)}
             </div>
 
             {/* Change and YTD Row */}
@@ -182,7 +188,7 @@ const MultiStockCard = ({ data }: { data: StockData[] }) => {
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '42px', fontWeight: 'bold' }}>{stock.symbol}</span>
                                 <span style={{ color: colors.textDim, fontSize: '20px', marginTop: '2px' }}>
-                                    {stock.longName || stock.symbol}
+                                    {truncateName(stock.longName || stock.symbol)}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
