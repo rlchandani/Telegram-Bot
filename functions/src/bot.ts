@@ -1,6 +1,6 @@
 import { Bot, Context, InputFile } from 'grammy';
 import { generateCard } from './generator/card';
-import { CommandLogService, GroupService } from './services/db';
+import { CommandLogService, GroupService, StatsService } from './services/db';
 import { getStockData } from './services/stock';
 import { getWeatherData } from './services/weather';
 
@@ -216,6 +216,11 @@ bot.hears(/\$[A-Z]+/gi, async (ctx) => {
         );
 
         await ctx.replyWithPhoto(new InputFile(buffer));
+
+        // Track stats
+        if (ctx.chat) {
+            await StatsService.incrementImageCount(ctx.chat.id, 'stock');
+        }
     } catch (error) {
         console.error('Error in stock handler:', error);
         await ctx.reply(`⚠️ Something went wrong while fetching stock data for: ${symbols.join(', ')}\n\nPlease try again in a moment.`);
@@ -237,6 +242,11 @@ bot.hears(/^Weather (.+)$/i, async (ctx) => {
         });
 
         await ctx.replyWithPhoto(new InputFile(buffer));
+
+        // Track stats
+        if (ctx.chat) {
+            await StatsService.incrementImageCount(ctx.chat.id, 'weather');
+        }
     } catch (error) {
         console.error('Error fetching weather:', error);
         await ctx.reply(`Could not find weather for "${city}".`);

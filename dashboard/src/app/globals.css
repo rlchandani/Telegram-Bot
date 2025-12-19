@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/* Configure dark mode to use class-based switching */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Base body styling */
+body {
+  @apply bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-white;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Button styles */
+.btn {
+  @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-xl transition-all cursor-pointer;
+}
+
+.btn-primary {
+  @apply bg-green-500 text-black hover:opacity-90;
+}
+
+.btn-danger {
+  @apply bg-red-500 text-white hover:opacity-90;
+}
+
+.btn-secondary {
+  @apply bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-500;
+}
+
+/* Input styles */
+.input {
+  @apply w-full px-4 py-3 bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white text-sm;
+}
+
+.input:focus {
+  @apply outline-none border-gray-400 dark:border-slate-500;
+}
+
+.input::placeholder {
+  @apply text-gray-500 dark:text-slate-400;
+}
