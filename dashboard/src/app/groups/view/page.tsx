@@ -1,16 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import { HistoryTimeline } from '@/components/HistoryTimeline';
 import { MessageComposer } from '@/components/MessageComposer';
 import { api, Group, CommandLog } from '@/lib/api';
-
-interface PageProps {
-    params: Promise<{ chatId: string }>;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatDate(timestamp: any): string {
@@ -39,9 +35,10 @@ function formatDate(timestamp: any): string {
     });
 }
 
-export default function GroupDetailPage({ params }: PageProps) {
-    const resolvedParams = use(params);
-    const chatId = parseInt(resolvedParams.chatId);
+function GroupContent() {
+    const searchParams = useSearchParams();
+    const chatIdParam = searchParams.get('id');
+    const chatId = chatIdParam ? parseInt(chatIdParam) : 0;
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
@@ -235,5 +232,13 @@ export default function GroupDetailPage({ params }: PageProps) {
                 <HistoryTimeline history={history} loading={historyLoading} />
             </div>
         </div>
+    );
+}
+
+export default function GroupDetailPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen text-center p-10">Loading...</div>}>
+            <GroupContent />
+        </Suspense>
     );
 }

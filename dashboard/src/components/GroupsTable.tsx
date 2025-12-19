@@ -122,7 +122,7 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                 <td className="py-4 px-4">
                                     <div className="flex justify-center items-center gap-3">
                                         <Link
-                                            href={`/groups/${group.chatId ?? group.id}`}
+                                            href={`/groups/view?id=${group.chatId ?? group.id}`}
                                             className="flex flex-col items-center text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                             title="View History"
                                         >
