@@ -1,7 +1,7 @@
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 
-// Suppress notices if possible, or ignore if method missing
-// yahooFinance.setGlobalConfig({ suppressNotices: ['yahooSurvey'] });
+// Instantiate the Yahoo Finance client (required for v3+)
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 interface YahooQuote {
     regularMarketPrice?: number;
