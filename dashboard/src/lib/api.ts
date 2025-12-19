@@ -13,7 +13,8 @@ const getApiBaseUrl = (): string => {
     // 2. Local development: use emulator
     const isDev = process.env.NODE_ENV === 'development';
     if (isDev) {
-        return 'http://127.0.0.1:5001/demo-test/us-central1/adminApi';
+        // Fallback to demo-test if using default emulator setup, regardless of strict project ID
+        return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5001/demo-test/us-central1/adminApi';
     }
 
     // 3. Production: use Cloud Functions
@@ -107,6 +108,8 @@ export interface HistoryResponse {
 }
 
 // API Functions
+export type MessageType = 'text' | 'photo' | 'video' | 'document';
+
 export const api = {
     async getGroups(params: {
         limit?: number;
@@ -156,7 +159,7 @@ export const api = {
     },
 
     async sendMessage(chatId: number, data: {
-        type: 'text' | 'photo' | 'video' | 'document';
+        type: MessageType;
         text?: string;
         caption?: string;
         fileData?: string;

@@ -69,6 +69,7 @@ export default function MessagesPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar">
                         {groups.map((group) => (
                             <button
+                                type="button"
                                 key={group.chatId}
                                 onClick={() => setSelectedGroupId(group.chatId)}
                                 className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${selectedGroupId === group.chatId

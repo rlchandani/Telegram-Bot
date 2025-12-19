@@ -7,16 +7,19 @@ interface HistoryTimelineProps {
     loading?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatDateTime(timestamp: any): { date: string; time: string } {
+type Timestamp = { _seconds?: number; seconds?: number } | Date | string | number | null | undefined;
+
+function formatDateTime(timestamp: Timestamp): { date: string; time: string } {
     if (!timestamp) return { date: 'N/A', time: '' };
 
     let dateObj: Date | null = null;
 
-    if (timestamp._seconds !== undefined) {
+    if (typeof timestamp === 'object' && '_seconds' in timestamp && typeof timestamp._seconds === 'number') {
         dateObj = new Date(timestamp._seconds * 1000);
-    } else if (timestamp.seconds !== undefined) {
+    } else if (typeof timestamp === 'object' && 'seconds' in timestamp && typeof timestamp.seconds === 'number') {
         dateObj = new Date(timestamp.seconds * 1000);
+    } else if (timestamp instanceof Date) {
+        dateObj = timestamp;
     } else if (typeof timestamp === 'string') {
         dateObj = new Date(timestamp);
     } else if (typeof timestamp === 'number') {

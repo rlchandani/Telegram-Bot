@@ -91,7 +91,7 @@ export default function GroupsPage() {
         <div className="min-h-screen p-6 md:p-8">
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
                 <StatsCard
                     title="Total Users"
                     value={stats?.totalUsers ?? 0}
@@ -118,12 +118,13 @@ export default function GroupsPage() {
                     />
                 </form>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {(['all', 'active', 'inactive', 'blocked'] as StatusFilter[]).map((s) => (
                         <button
+                            type="button"
                             key={s}
                             onClick={() => { setStatus(s); setPage(0); }}
-                            className={`btn ${status === s ? 'btn-primary' : 'btn-secondary'} capitalize`}
+                            className={`btn flex-1 sm:flex-none ${status === s ? 'btn-primary' : 'btn-secondary'} capitalize text-sm px-3 py-2`}
                         >
                             {s}
                         </button>
@@ -156,6 +157,7 @@ export default function GroupsPage() {
             {totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-8">
                     <button
+                        type="button"
                         onClick={() => setPage(p => Math.max(0, p - 1))}
                         disabled={page === 0}
                         className="btn btn-secondary disabled:opacity-50"
@@ -166,6 +168,7 @@ export default function GroupsPage() {
                         Page {page + 1} of {totalPages}
                     </span>
                     <button
+                        type="button"
                         onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                         className="btn btn-secondary disabled:opacity-50"

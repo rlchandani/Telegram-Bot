@@ -7,38 +7,14 @@ import { useAuth } from '@/components/AuthProvider';
 import { HistoryTimeline } from '@/components/HistoryTimeline';
 import { MessageComposer } from '@/components/MessageComposer';
 import { api, Group, CommandLog } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatDate(timestamp: any): string {
-    if (!timestamp) return 'N/A';
 
-    let dateObj: Date | null = null;
-
-    if (timestamp._seconds !== undefined) {
-        dateObj = new Date(timestamp._seconds * 1000);
-    } else if (timestamp.seconds !== undefined) {
-        dateObj = new Date(timestamp.seconds * 1000);
-    } else if (typeof timestamp === 'string') {
-        dateObj = new Date(timestamp);
-    } else if (typeof timestamp === 'number') {
-        dateObj = new Date(timestamp);
-    }
-
-    if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
-
-    return dateObj.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-}
 
 function GroupContent() {
     const searchParams = useSearchParams();
     const chatIdParam = searchParams.get('id');
-    const chatId = chatIdParam ? parseInt(chatIdParam) : 0;
+    const chatId = chatIdParam ? parseInt(chatIdParam, 10) : 0;
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
@@ -158,7 +134,7 @@ function GroupContent() {
                 </div>
 
                 {/* Joined & Status Row */}
-                <div className="flex justify-center gap-6 text-sm mb-6">
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-sm mb-6">
                     <div>
                         <span className="text-gray-500 dark:text-slate-400">Joined: </span>
                         <span className="text-gray-900 dark:text-white">{formatDate(group.joinedAt || group.updatedAt)}</span>
@@ -179,6 +155,7 @@ function GroupContent() {
 
                 {/* Restrict Button */}
                 <button
+                    type="button"
                     onClick={handleToggleBlock}
                     disabled={updating}
                     className={`w-full py-3 rounded-full font-medium transition-all ${group.isBlocked
@@ -193,7 +170,7 @@ function GroupContent() {
             {/* Stats Section */}
             <div className="mb-8">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Group Statistics</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-center">
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                             {group.stats?.totalMessages || group['stats.totalMessages'] || 0}

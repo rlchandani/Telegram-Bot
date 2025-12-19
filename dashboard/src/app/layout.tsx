@@ -26,7 +26,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <Header />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
               {children}
             </main>
           </ThemeProvider>

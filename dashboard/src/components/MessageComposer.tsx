@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { api, MessageType } from '@/lib/api';
 
 interface MessageComposerProps {
     chatId: number;
     onMessageSent?: () => void;
 }
 
-type MessageType = 'text' | 'photo' | 'video' | 'document';
+
 
 interface QueueItem {
     id: string;
@@ -17,6 +17,30 @@ interface QueueItem {
     status: 'pending' | 'uploading' | 'success' | 'error';
     error?: string;
 }
+
+const validateFile = (file: File): { valid: boolean; error?: string; type: MessageType } => {
+    let type: MessageType = 'document';
+    let limitMB = 50;
+
+    if (file.type.startsWith('image/')) {
+        type = 'photo';
+        limitMB = 10;
+    } else if (file.type.startsWith('video/')) {
+        type = 'video';
+        limitMB = 50;
+    }
+
+    const maxSize = limitMB * 1024 * 1024;
+    if (file.size > maxSize) {
+        return {
+            valid: false,
+            error: `Too large (Max ${limitMB}MB)`,
+            type
+        };
+    }
+
+    return { valid: true, type };
+};
 
 export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps) {
     const [activeTab, setActiveTab] = useState<'compose' | 'upload'>('compose');
@@ -59,31 +83,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
 
     // --- File Upload Logic ---
 
-    const validateFile = (file: File): { valid: boolean; error?: string; type: MessageType } => {
-        let type: MessageType = 'document';
-        let limitMB = 50;
-
-        if (file.type.startsWith('image/')) {
-            type = 'photo';
-            limitMB = 10;
-        } else if (file.type.startsWith('video/')) {
-            type = 'video';
-            limitMB = 50;
-        }
-
-        const maxSize = limitMB * 1024 * 1024;
-        if (file.size > maxSize) {
-            return {
-                valid: false,
-                error: `Too large (Max ${limitMB}MB)`,
-                type
-            };
-        }
-
-        return { valid: true, type };
-    };
-
-    const addFilesToQueue = (files: FileList | File[]) => {
+    const addFilesToQueue = useCallback((files: FileList | File[]) => {
         const newItems: QueueItem[] = [];
 
         Array.from(files).forEach(file => {
@@ -98,7 +98,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
         });
 
         setQueue(prev => [...prev, ...newItems]);
-    };
+    }, []);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -116,7 +116,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
         if (e.dataTransfer.files?.length) {
             addFilesToQueue(e.dataTransfer.files);
         }
-    }, []);
+    }, [addFilesToQueue]);
 
     const removeQueueItem = (id: string) => {
         setQueue(prev => prev.filter(item => item.id !== id));
@@ -175,19 +175,21 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
             {/* Tabs */}
             <div className="flex border-b border-gray-200 dark:border-slate-700">
                 <button
+                    type="button"
                     onClick={() => setActiveTab('compose')}
                     className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'compose'
-                            ? 'bg-white dark:bg-slate-800 text-green-500 border-b-2 border-green-500'
-                            : 'bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+                        ? 'bg-white dark:bg-slate-800 text-green-500 border-b-2 border-green-500'
+                        : 'bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                         }`}
                 >
                     Write Message
                 </button>
                 <button
+                    type="button"
                     onClick={() => setActiveTab('upload')}
                     className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'upload'
-                            ? 'bg-white dark:bg-slate-800 text-green-500 border-b-2 border-green-500'
-                            : 'bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+                        ? 'bg-white dark:bg-slate-800 text-green-500 border-b-2 border-green-500'
+                        : 'bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                         }`}
                 >
                     Upload Files
@@ -208,14 +210,15 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
 
                         {(textError || textSuccess) && (
                             <div className={`text-sm p-3 rounded-lg border ${textError
-                                    ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                                    : 'bg-green-500/10 border-green-500/20 text-green-500'
+                                ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                                : 'bg-green-500/10 border-green-500/20 text-green-500'
                                 }`}>
                                 {textError || textSuccess}
                             </div>
                         )}
 
                         <button
+                            type="button"
                             onClick={handleSendText}
                             disabled={sendingText || !text.trim()}
                             className="w-full py-3 bg-green-500 text-black font-medium rounded-xl hover:bg-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -232,9 +235,13 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputRef.current?.click()}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Upload file"
                             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragging
-                                    ? 'border-green-500 bg-green-500/10'
-                                    : 'border-gray-300 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-500 hover:bg-gray-50 dark:hover:bg-slate-800/50'
+                                ? 'border-green-500 bg-green-500/10'
+                                : 'border-gray-300 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-500 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                                 }`}
                         >
                             <input
@@ -264,6 +271,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                                     <h4 className="font-medium text-gray-900 dark:text-white">File Queue ({queue.length})</h4>
                                     {queue.some(i => i.status === 'success' || i.status === 'error') && (
                                         <button
+                                            type="button"
                                             onClick={clearFinished}
                                             className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300"
                                         >
@@ -276,14 +284,14 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                                         <div
                                             key={item.id}
                                             className={`flex items-center justify-between p-3 rounded-lg border ${item.status === 'error' ? 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-800' :
-                                                    item.status === 'success' ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800' :
-                                                        'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
+                                                item.status === 'success' ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800' :
+                                                    'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'photo' ? 'bg-purple-100 text-purple-600' :
-                                                        item.type === 'video' ? 'bg-blue-100 text-blue-600' :
-                                                            'bg-gray-100 text-gray-600'
+                                                    item.type === 'video' ? 'bg-blue-100 text-blue-600' :
+                                                        'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {item.type === 'photo' ? '🖼️' : item.type === 'video' ? '🎥' : '📄'}
                                                 </div>
@@ -305,6 +313,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                                             <div className="flex items-center gap-2">
                                                 {item.status === 'pending' && (
                                                     <button
+                                                        type="button"
                                                         onClick={() => removeQueueItem(item.id)}
                                                         className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-400 hover:text-red-500"
                                                     >
@@ -327,6 +336,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                                 </div>
 
                                 <button
+                                    type="button"
                                     onClick={processQueue}
                                     disabled={isProcessingQueue || !queue.some(i => i.status === 'pending')}
                                     className="w-full py-3 bg-green-500 text-black font-medium rounded-xl hover:bg-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

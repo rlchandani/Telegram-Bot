@@ -58,8 +58,8 @@ app.use(requireAdmin);
 // GET /groups - List all groups
 app.get('/groups', async (req: Request, res: Response) => {
     try {
-        const limit = parseInt(req.query.limit as string) || 20;
-        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = parseInt(req.query.limit as string, 10) || 20;
+        const offset = parseInt(req.query.offset as string, 10) || 0;
         const status = (req.query.status as 'active' | 'inactive' | 'blocked' | 'all') || 'all';
         const search = req.query.search as string | undefined;
 
@@ -74,7 +74,7 @@ app.get('/groups', async (req: Request, res: Response) => {
 // GET /groups/:chatId - Get single group
 app.get('/groups/:chatId', async (req: Request, res: Response) => {
     try {
-        const chatId = parseInt(req.params.chatId);
+        const chatId = parseInt(req.params.chatId, 10);
         if (isNaN(chatId)) {
             res.status(400).json({ error: 'Invalid chatId' });
             return;
@@ -96,13 +96,13 @@ app.get('/groups/:chatId', async (req: Request, res: Response) => {
 // GET /groups/:chatId/history - Get command history
 app.get('/groups/:chatId/history', async (req: Request, res: Response) => {
     try {
-        const chatId = parseInt(req.params.chatId);
+        const chatId = parseInt(req.params.chatId, 10);
         if (isNaN(chatId)) {
             res.status(400).json({ error: 'Invalid chatId' });
             return;
         }
 
-        const limit = parseInt(req.query.limit as string) || 50;
+        const limit = parseInt(req.query.limit as string, 10) || 50;
         const startAfter = req.query.startAfter as string | undefined;
 
         const result = await AdminService.getGroupHistory(chatId, { limit, startAfter });
@@ -116,7 +116,7 @@ app.get('/groups/:chatId/history', async (req: Request, res: Response) => {
 // PATCH /groups/:chatId - Update group (block/unblock)
 app.patch('/groups/:chatId', async (req: Request, res: Response) => {
     try {
-        const chatId = parseInt(req.params.chatId);
+        const chatId = parseInt(req.params.chatId, 10);
         if (isNaN(chatId)) {
             res.status(400).json({ error: 'Invalid chatId' });
             return;
@@ -159,7 +159,7 @@ app.patch('/groups/:chatId', async (req: Request, res: Response) => {
 // POST /groups/:chatId/message - Send message to group
 app.post('/groups/:chatId/message', async (req: Request, res: Response) => {
     try {
-        const chatId = parseInt(req.params.chatId);
+        const chatId = parseInt(req.params.chatId, 10);
         if (isNaN(chatId)) {
             res.status(400).json({ error: 'Invalid chatId' });
             return;
@@ -247,7 +247,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // DELETE /groups/:chatId - Delete a group
 app.delete('/groups/:chatId', async (req: Request, res: Response) => {
     try {
-        const chatId = parseInt(req.params.chatId);
+        const chatId = parseInt(req.params.chatId, 10);
         if (isNaN(chatId)) {
             res.status(400).json({ error: 'Invalid chatId' });
             return;

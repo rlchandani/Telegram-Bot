@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, Auth } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase';
 
 interface AuthContextType {
@@ -16,13 +16,10 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [auth, setAuth] = useState<Auth | null>(null);
 
     useEffect(() => {
         try {
             const firebaseAuth = getFirebaseAuth();
-            setAuth(firebaseAuth);
-
             const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
                 setUser(user);
                 setLoading(false);
@@ -31,17 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return () => unsubscribe();
         } catch (error) {
             console.error('Firebase init error:', error);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(false);
         }
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        if (!auth) throw new Error('Firebase not initialized');
+        const auth = getFirebaseAuth();
         await signInWithEmailAndPassword(auth, email, password);
     };
 
     const logout = async () => {
-        if (!auth) throw new Error('Firebase not initialized');
+        const auth = getFirebaseAuth();
         await signOut(auth);
     };
 

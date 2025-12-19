@@ -1,9 +1,21 @@
-import YahooFinance from 'yahoo-finance2';
+import yahooFinance from 'yahoo-finance2';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const yahooFinance = new (YahooFinance as any)({
-    suppressNotices: ['yahooSurvey']
-});
+// Suppress notices if possible, or ignore if method missing
+// yahooFinance.setGlobalConfig({ suppressNotices: ['yahooSurvey'] });
+
+interface YahooQuote {
+    regularMarketPrice?: number;
+    symbol: string;
+    currency?: string;
+    regularMarketChange?: number;
+    regularMarketChangePercent?: number;
+    longName?: string;
+}
+
+interface YahooChart {
+    quotes?: { close?: number }[];
+    meta?: { regularMarketPrice?: number; chartPreviousClose?: number };
+}
 
 export interface StockData {
     symbol: string;
@@ -23,27 +35,32 @@ export async function getStockData(input: string): Promise<StockData> {
     const startOfYear = new Date('2025-01-01');
 
     try {
-        // Fetch quote and charts in parallel
-        const [quoteResult, tickerChart, spyChart] = await Promise.all([
-            yahooFinance.quote(symbol),
-            yahooFinance.chart(symbol, { period1: startOfYear }),
-            yahooFinance.chart('SPY', { period1: startOfYear })
-        ]);
+        // Fetch individually avoids tuple inference issues, and we cast to custom interfaces
+        // because the library types are resolving to 'never' in this environment.
+        const quote = await yahooFinance.quote(symbol) as unknown as YahooQuote;
+        const tickerChart = await yahooFinance.chart(symbol, { period1: startOfYear }) as unknown as YahooChart;
+        const spyChart = await yahooFinance.chart('SPY', { period1: startOfYear }) as unknown as YahooChart;
 
-        const quote = quoteResult;
         const price = quote.regularMarketPrice || 0;
 
         // YTD Calculation - Use CLOSE price of first trading day of the year
         // Yahoo Finance uses the closing price of Jan 2nd (first trading day) for YTD
         const tickerQuotes = tickerChart.quotes || [];
-        const tickerYearStartPrice = tickerQuotes[0]?.close || tickerChart.meta.chartPreviousClose || price;
+        const tickerMeta = tickerChart.meta || {};
+        const firstTickerQuote = tickerQuotes[0];
+        const tickerYearStartPrice = firstTickerQuote?.close || tickerMeta.chartPreviousClose || price;
         const ytdChangeAbsolute = price - tickerYearStartPrice;
         const ytdChangePercent = (ytdChangeAbsolute / tickerYearStartPrice) * 100;
 
         // SPY Comparison - Same methodology
         const spyQuotes = spyChart.quotes || [];
-        const spyPrice = spyChart.meta.regularMarketPrice;
-        const spyYearStartPrice = spyQuotes[0]?.close || spyChart.meta.chartPreviousClose || spyPrice;
+        const spyMeta = spyChart.meta || {};
+        const firstSpyQuote = spyQuotes[0];
+        // spyMeta.regularMarketPrice is optional in interface, handled by fallback to spyPrice which needs to be defined?
+        // Wait, logic: spyPrice = spyMeta.regularMarketPrice
+        const spyPrice = spyMeta.regularMarketPrice || 0;
+
+        const spyYearStartPrice = firstSpyQuote?.close || spyMeta.chartPreviousClose || spyPrice;
         const spyYtdChangePercent = ((spyPrice - spyYearStartPrice) / spyYearStartPrice) * 100;
         const ytdVsSpy = ytdChangePercent - spyYtdChangePercent;
 
