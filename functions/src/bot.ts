@@ -48,7 +48,7 @@ bot.use(async (ctx, next) => {
             // to specifically allow /start to work. 
             // Logic: if stopped, we block everything EXCEPT /start.
             if (!isActive) {
-                const text = ctx.message?.text || '';
+                const text = ctx.message?.text || ctx.message?.caption || '';
                 // If inactive, only allow /start command to proceed (to re-activate)
                 if (!text.startsWith('/start')) {
                     return; // Silently ignore
@@ -173,9 +173,9 @@ bot.command('stop', async (ctx) => {
     await ctx.reply('🛑 Bot stopped. I will stay silent until you type /start.');
 });
 
-// 1. Stock Trigger: $SYMBOL (anywhere in text) - supports multiple symbols
+// 1. Stock Trigger: $SYMBOL (anywhere in text or caption) - supports multiple symbols
 bot.hears(/\$[A-Z]+/gi, async (ctx) => {
-    const messageText = ctx.message?.text || '';
+    const messageText = ctx.message?.text || ctx.message?.caption || '';
     // Extract all unique stock symbols from the message
     const matches = messageText.match(/\$([A-Z]+)/gi) || [];
     const symbols = [...new Set(matches.map(m => m.replace('$', '').toUpperCase()))];
