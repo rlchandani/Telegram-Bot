@@ -1,12 +1,14 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { useAuth } from './AuthProvider';
-import { useEffect, useState } from 'react';
 
-export function Header() {
+import { useAuth } from './AuthProvider';
+
+export function Header(): React.ReactElement {
     const { theme, setTheme } = useTheme();
     const { user, logout } = useAuth();
     const [mounted, setMounted] = useState(false);
@@ -21,7 +23,8 @@ export function Header() {
         setTheme(theme === 'dark' ? 'light' : 'dark');
     };
 
-    const isActive = (path: string) => pathname?.startsWith(path);
+    const isLoginPage = pathname === '/login';
+    const isActive = (path: string): boolean => pathname?.startsWith(path) ?? false;
 
     const navLinks = [
         {
@@ -46,28 +49,30 @@ export function Header() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <Link href="/groups" className="flex items-center gap-2 mr-2 sm:mr-8 shrink-0">
+                        <div className="flex items-center gap-2 mr-2 sm:mr-8 shrink-0">
                             <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                                 <span className="sm:hidden">iRedlof</span>
                                 <span className="hidden sm:inline">iRedlof Telegram Bot</span>
                             </span>
-                        </Link>
+                        </div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden sm:flex items-center gap-6 mr-auto">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={`text-sm font-medium transition-colors ${isActive(link.href)
-                                        ? 'text-gray-900 dark:text-white'
-                                        : 'text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white'
-                                        }`}
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
-                        </nav>
+                        {!isLoginPage && (
+                            <nav className="hidden sm:flex items-center gap-6 mr-auto">
+                                {navLinks.map((link) => (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className={`text-sm font-medium transition-colors ${isActive(link.href)
+                                            ? 'text-gray-900 dark:text-white'
+                                            : 'text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white'
+                                            }`}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                        )}
 
                         {/* Right side */}
                         <div className="flex items-center gap-2 sm:gap-4">
@@ -77,6 +82,7 @@ export function Header() {
                                     type="button"
                                     onClick={toggleTheme}
                                     title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                                     className="p-2 rounded-lg bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
                                 >
                                     {theme === 'dark' ? (
@@ -92,12 +98,13 @@ export function Header() {
                             )}
 
                             {/* Logout */}
-                            {user && (
+                            {user && !isLoginPage && (
                                 <button
                                     type="button"
                                     onClick={logout}
                                     className="btn btn-secondary text-sm flex items-center gap-2 px-3 sm:px-4"
                                     title="Logout"
+                                    aria-label="Logout"
                                 >
                                     <span className="hidden sm:inline">Logout</span>
                                     <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,21 +118,23 @@ export function Header() {
             </header>
 
             {/* Mobile Bottom Navigation */}
-            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe">
-                {navLinks.map((link) => (
-                    <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive(link.href)
-                            ? 'text-blue-500 dark:text-blue-400'
-                            : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
-                            }`}
-                    >
-                        {link.icon}
-                        <span className="text-[10px] font-medium">{link.label}</span>
-                    </Link>
-                ))}
-            </nav>
+            {!isLoginPage && (
+                <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-50 px-2 pb-safe">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive(link.href)
+                                ? 'text-blue-500 dark:text-blue-400'
+                                : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                                }`}
+                        >
+                            {link.icon}
+                            <span className="text-[10px] font-medium">{link.label}</span>
+                        </Link>
+                    ))}
+                </nav>
+            )}
         </>
     );
 }

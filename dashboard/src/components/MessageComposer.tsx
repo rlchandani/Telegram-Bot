@@ -171,7 +171,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
     };
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-2xl overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-gray-200 dark:border-slate-700">
                 <button
@@ -239,7 +239,7 @@ export function MessageComposer({ chatId, onMessageSent }: MessageComposerProps)
                             role="button"
                             tabIndex={0}
                             aria-label="Upload file"
-                            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragging
+                            className={`border border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragging
                                 ? 'border-green-500 bg-green-500/10'
                                 : 'border-gray-300 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-500 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                                 }`}

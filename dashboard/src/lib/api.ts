@@ -13,8 +13,8 @@ const getApiBaseUrl = (): string => {
     // 2. Local development: use emulator
     const isDev = process.env.NODE_ENV === 'development';
     if (isDev) {
-        // Fallback to demo-test if using default emulator setup, regardless of strict project ID
-        return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5001/demo-test/us-central1/adminApi';
+        // Use the actual project ID for local emulator
+        return `http://127.0.0.1:5001/${projectId}/us-central1/adminApi`;
     }
 
     // 3. Production: use Cloud Functions

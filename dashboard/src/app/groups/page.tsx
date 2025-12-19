@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+
+import { api, Group } from '@/lib/api';
+import { AuthGuard } from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 import { GroupsTable } from '@/components/GroupsTable';
 import { StatsCard } from '@/components/StatsCard';
-import { api, Group } from '@/lib/api';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'blocked';
 
@@ -16,8 +17,7 @@ interface Stats {
 }
 
 export default function GroupsPage() {
-    const { user, loading: authLoading } = useAuth();
-    const router = useRouter();
+    const { user } = useAuth();
 
     const [groups, setGroups] = useState<Group[]>([]);
     const [total, setTotal] = useState(0);
@@ -49,20 +49,14 @@ export default function GroupsPage() {
         }
     }, [page, status, search]);
 
-    const fetchStats = useCallback(async () => {
+    const fetchStats = useCallback(async (): Promise<void> => {
         try {
             const data = await api.getStats();
             setStats(data);
-        } catch (err) {
-            console.error('Failed to fetch stats:', err);
+        } catch {
+            // Silent fail - stats will show 0
         }
     }, []);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (user) {
@@ -71,112 +65,106 @@ export default function GroupsPage() {
         }
     }, [user, fetchGroups, fetchStats]);
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = (e: React.FormEvent): void => {
         e.preventDefault();
         setPage(0);
         fetchGroups();
     };
 
-    if (authLoading || !user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse text-gray-500 dark:text-slate-400">Loading...</div>
-            </div>
-        );
-    }
-
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="min-h-screen p-6 md:p-8">
+        <AuthGuard>
+            <div className="min-h-screen p-6 md:p-8">
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
-                <StatsCard
-                    title="Total Users"
-                    value={stats?.totalUsers ?? 0}
-                />
-                <StatsCard
-                    title="Active Groups"
-                    value={stats?.activeGroups ?? 0}
-                />
-                <StatsCard
-                    title="Commands Today"
-                    value={stats?.commandsToday ?? 0}
-                />
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <form onSubmit={handleSearch} className="flex-1">
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by name, username, or chat ID..."
-                        className="input"
+                {/* Stats Cards */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                    <StatsCard
+                        title="Total Users"
+                        value={stats?.totalUsers ?? 0}
                     />
-                </form>
+                    <StatsCard
+                        title="Active Groups"
+                        value={stats?.activeGroups ?? 0}
+                    />
+                    <StatsCard
+                        title="Commands Today"
+                        value={stats?.commandsToday ?? 0}
+                    />
+                </div>
 
-                <div className="flex flex-wrap gap-2">
-                    {(['all', 'active', 'inactive', 'blocked'] as StatusFilter[]).map((s) => (
+                {/* Filters */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <form onSubmit={handleSearch} className="flex-1">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search by name, username, or chat ID..."
+                            className="input"
+                        />
+                    </form>
+
+                    <div className="flex flex-wrap gap-2">
+                        {(['all', 'active', 'inactive', 'blocked'] as StatusFilter[]).map((s) => (
+                            <button
+                                type="button"
+                                key={s}
+                                onClick={() => { setStatus(s); setPage(0); }}
+                                className={`btn flex-1 sm:flex-none ${status === s ? 'btn-primary' : 'btn-secondary'} capitalize text-sm px-3 py-2`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="text-gray-500 dark:text-slate-400 text-sm mb-4">
+                    Showing {groups.length} of {total} groups
+                </div>
+
+                {/* Error */}
+                {error && (
+                    <div className="text-red-500 text-center p-4 bg-red-500/10 rounded-xl border border-red-500/20 mb-4">
+                        {error}
+                    </div>
+                )}
+
+                {/* Groups Table */}
+                {loading ? (
+                    <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-2xl p-8">
+                        <div className="animate-pulse text-gray-500 dark:text-slate-400 text-center">Loading groups...</div>
+                    </div>
+                ) : (
+                    <GroupsTable groups={groups} onGroupUpdated={fetchGroups} />
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex justify-center gap-2 mt-8">
                         <button
                             type="button"
-                            key={s}
-                            onClick={() => { setStatus(s); setPage(0); }}
-                            className={`btn flex-1 sm:flex-none ${status === s ? 'btn-primary' : 'btn-secondary'} capitalize text-sm px-3 py-2`}
+                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={page === 0}
+                            className="btn btn-secondary disabled:opacity-50"
                         >
-                            {s}
+                            Previous
                         </button>
-                    ))}
-                </div>
+                        <span className="btn btn-secondary pointer-events-none">
+                            Page {page + 1} of {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                            className="btn btn-secondary disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
-
-            {/* Stats */}
-            <div className="text-gray-500 dark:text-slate-400 text-sm mb-4">
-                Showing {groups.length} of {total} groups
-            </div>
-
-            {/* Error */}
-            {error && (
-                <div className="text-red-500 text-center p-4 bg-red-500/10 rounded-xl border border-red-500/20 mb-4">
-                    {error}
-                </div>
-            )}
-
-            {/* Groups Table */}
-            {loading ? (
-                <div className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-8">
-                    <div className="animate-pulse text-gray-500 dark:text-slate-400 text-center">Loading groups...</div>
-                </div>
-            ) : (
-                <GroupsTable groups={groups} onGroupUpdated={fetchGroups} />
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-8">
-                    <button
-                        type="button"
-                        onClick={() => setPage(p => Math.max(0, p - 1))}
-                        disabled={page === 0}
-                        className="btn btn-secondary disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-                    <span className="btn btn-secondary pointer-events-none">
-                        Page {page + 1} of {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                        disabled={page >= totalPages - 1}
-                        className="btn btn-secondary disabled:opacity-50"
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
-        </div>
+        </AuthGuard>
     );
 }

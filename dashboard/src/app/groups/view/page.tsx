@@ -1,22 +1,22 @@
 'use client';
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+
+import { api, Group, CommandLog } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
+import { AuthGuard } from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 import { HistoryTimeline } from '@/components/HistoryTimeline';
 import { MessageComposer } from '@/components/MessageComposer';
-import { api, Group, CommandLog } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
 
-
-
-function GroupContent() {
+function GroupContent(): React.ReactElement {
     const searchParams = useSearchParams();
     const chatIdParam = searchParams.get('id');
     const chatId = chatIdParam ? parseInt(chatIdParam, 10) : 0;
-    const { user, loading: authLoading } = useAuth();
-    const router = useRouter();
+    const { user } = useAuth();
 
     const [group, setGroup] = useState<Group | null>(null);
     const [history, setHistory] = useState<CommandLog[]>([]);
@@ -37,23 +37,17 @@ function GroupContent() {
         }
     }, [chatId]);
 
-    const fetchHistory = useCallback(async () => {
+    const fetchHistory = useCallback(async (): Promise<void> => {
         setHistoryLoading(true);
         try {
             const data = await api.getGroupHistory(chatId, { limit: 50 });
             setHistory(data.history);
-        } catch (err) {
-            console.error('Failed to fetch history:', err);
+        } catch {
+            // Silent fail - history will show empty
         } finally {
             setHistoryLoading(false);
         }
     }, [chatId]);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (user && chatId) {
@@ -62,7 +56,7 @@ function GroupContent() {
         }
     }, [user, chatId, fetchGroup, fetchHistory]);
 
-    const handleToggleBlock = async () => {
+    const handleToggleBlock = async (): Promise<void> => {
         if (!group) return;
         setUpdating(true);
         try {
@@ -75,13 +69,6 @@ function GroupContent() {
         }
     };
 
-    if (authLoading || !user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse text-gray-500 dark:text-slate-400">Loading...</div>
-            </div>
-        );
-    }
 
     if (loading) {
         return (
@@ -214,8 +201,10 @@ function GroupContent() {
 
 export default function GroupDetailPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen text-center p-10">Loading...</div>}>
-            <GroupContent />
-        </Suspense>
+        <AuthGuard>
+            <Suspense fallback={<div className="min-h-screen text-center p-10">Loading...</div>}>
+                <GroupContent />
+            </Suspense>
+        </AuthGuard>
     );
 }
