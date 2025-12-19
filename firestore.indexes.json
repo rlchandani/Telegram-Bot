@@ -5,16 +5,6 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "timestamp",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "history",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
                     "fieldPath": "status",
                     "order": "ASCENDING"
                 },
