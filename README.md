@@ -67,6 +67,13 @@ The card automatically adapts its theme and units based on location and time of 
 - **Dynamic Themes**: Changes between Light (Day) and Dark (Night) modes based on local time.
 - **Detailed Forecast**: Hourly trend chart and key metrics.
 
+### 🛡️ Dashboard & Administration
+- **Web Dashboard**: comprehensive management of groups, history, and status.
+- **Group Management**: View details, history, and ban/unban groups.
+- **Strict Security**: Bot only responds to registered, active, and unblocked groups.
+- **Notifications**: Automated alerts sent to groups upon ban/unblock.
+- **Activity Stats**: Track message and image generation counts per group.
+
 ### 🎨 Visual Cards
 - **Server-side PNG generation** using Satori + Resvg
 - **Dark theme** with professional styling
@@ -79,16 +86,27 @@ The card automatically adapts its theme and units based on location and time of 
 
 ```
 AI-Telegram/
-├── firebase.json          # Firebase configuration
+├── firebase.json          # Firebase configuration (Functions + Hosting)
+├── firestore.indexes.json # Database indexes
+├── .github/
+│   └── workflows/         # CI/CD Workflows
+├── dashboard/             # Next.js Admin Dashboard
+│   ├── src/
+│   │   ├── app/           # App Router
+│   │   ├── components/    # Reusable UI components (Tables, Dialogs, etc.)
+│   │   └── lib/           # API Client & Firebase Auth
 ├── functions/
 │   ├── src/
 │   │   ├── index.ts       # Firebase Functions entry point
 │   │   ├── bot.ts         # GrammY bot handlers
+│   │   ├── admin.ts       # Admin API backend
 │   │   ├── generator/
 │   │   │   └── card.tsx   # React components for card generation
 │   │   └── services/
+│   │       ├── db.ts      # Firestore Database Service
 │   │       ├── stock.ts   # Yahoo Finance integration
 │   │       └── weather.ts # Weather API integration
+│   ├── set-admin.js       # Admin claim utility script
 │   ├── assets/
 │   │   └── fonts/         # Roboto font files
 │   ├── package.json
@@ -209,10 +227,48 @@ Once the webhook is set, test in Telegram:
    firebase functions:secrets:set TELEGRAM_BOT_TOKEN
    ```
 
-4. **Deploy**
+4. **Deploy Functions & Dashboard**
+
+   **Option A: GitHub Actions (Recommended)**
+   - Push to the `antigravity` branch.
+   - The workflow `firebase-deploy.yml` will automatically build and deploy both Functions and Dashboard.
+   - Ensure you set these Repository Secrets in GitHub:
+     - `TELEGRAM_BOT_TOKEN`
+     - `GOOGLE_MAPS_API_KEY`
+     - `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON content)
+     - `NEXT_PUBLIC_FIREBASE_API_KEY`
+     - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+     - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+
+   **Option B: Manual Deployment**
    ```bash
-   npm run deploy
+   # Deploy everything
+   firebase deploy
+
+   # Deploy only functions
+   firebase deploy --only functions
+
+   # Deploy only dashboard
+   firebase deploy --only hosting
    ```
+
+### 🔐 Granting Admin Access
+
+To access the dashboard, your user account must have the `admin` custom claim.
+
+1.  **Generate Service Account Key**:
+    - Go to Firebase Console -> Project Settings -> Service accounts.
+    - Generate new private key.
+    - Save as `functions/service-account.json`.
+
+2.  **Run the Script**:
+    ```bash
+    cd functions
+    export GOOGLE_APPLICATION_CREDENTIALS="./service-account.json"
+    node set-admin.js your-email@example.com
+    ```
+
+3.  **Sign In**: Log out and log back in to the dashboard to refresh your token.
 
 ### Configure Production Webhook
 
