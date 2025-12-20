@@ -75,7 +75,7 @@ export default function GroupsPage() {
 
     return (
         <AuthGuard>
-            <div className="min-h-screen p-6 md:p-8">
+            <div className="min-h-screen p-4 md:p-8">
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">

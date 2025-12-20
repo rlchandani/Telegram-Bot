@@ -43,14 +43,14 @@ export default function MessagesPage() {
 
     return (
         <AuthGuard>
-            <div className="min-h-screen p-6 md:p-8">
+            <div className="min-h-screen p-4 md:p-8">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
                     Send Messages
                 </h1>
 
                 <div className="grid gap-8">
                     {/* 1. Group Selector Card */}
-                    <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-2xl p-6">
+                    <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-2xl p-4 md:p-6">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             1. Select Group
                         </h2>
