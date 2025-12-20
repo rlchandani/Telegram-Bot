@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -50,9 +49,8 @@ export function Header(): React.ReactElement {
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
                         <div className="flex items-center gap-2 mr-2 sm:mr-8 shrink-0">
-                            <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                                <span className="sm:hidden">iRedlof</span>
-                                <span className="hidden sm:inline">iRedlof Telegram Bot</span>
+                            <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-none">
+                                iRedlof Telegram Bot
                             </span>
                         </div>
 

@@ -18,19 +18,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            const firebaseAuth = getFirebaseAuth();
-            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
-                setUser(user);
-                setLoading(false);
-            });
+        const initAuth = async () => {
+            try {
+                const firebaseAuth = getFirebaseAuth();
+                await firebaseAuth.authStateReady();
 
-            return () => unsubscribe();
-        } catch (error) {
-            console.error('Firebase init error:', error);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setLoading(false);
-        }
+                const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+                    setUser(user);
+                    setLoading(false);
+                });
+
+                return unsubscribe;
+            } catch (error) {
+                // console.error('Firebase init error:', error);
+                setLoading(false);
+            }
+        };
+
+        const unsubscribePromise = initAuth();
+
+        return () => {
+            unsubscribePromise.then(unsubscribe => {
+                if (unsubscribe) unsubscribe();
+            });
+        };
     }, []);
 
     const signIn = async (email: string, password: string) => {

@@ -21,9 +21,11 @@ export function AuthGuard({ children }: AuthGuardProps): React.ReactElement | nu
 
     useEffect(() => {
         if (!loading && !user) {
-            router.push(`/login?returnUrl=${encodeURIComponent(pathname)}`);
+            const target = `/login?returnUrl=${encodeURIComponent(pathname)}`;
+            // console.log(`[AuthGuard] User not found. Redirecting to: ${target}`);
+            router.push(target);
         }
-    }, [user, loading, router]);
+    }, [user, loading, router, pathname]);
 
     // Show loading state while checking auth
     if (loading) {

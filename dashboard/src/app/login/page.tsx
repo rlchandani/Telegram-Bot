@@ -17,6 +17,7 @@ function LoginForm() {
     // Redirect to groups if already logged in
     useEffect(() => {
         if (user) {
+            // console.log(`[LoginPage] User already logged in (${user.email}). Redirecting to: ${returnUrl}`);
             router.replace(returnUrl);
         }
     }, [user, router, returnUrl]);
@@ -40,9 +41,6 @@ function LoginForm() {
         <div className="w-full max-w-md">
             <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-3xl p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        iRedlof Telegram Bot
-                    </h1>
                     <p className="text-gray-500 dark:text-slate-400 text-sm">
                         Sign in to admin dashboard
                     </p>
@@ -106,7 +104,7 @@ function LoginForm() {
 
 export default function LoginPage(): React.ReactElement {
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="flex items-center justify-center p-4 min-h-[calc(100dvh-9rem)]">
             <Suspense fallback={<div className="animate-pulse text-gray-500">Loading...</div>}>
                 <LoginForm />
             </Suspense>
