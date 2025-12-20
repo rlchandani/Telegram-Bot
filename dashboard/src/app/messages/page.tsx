@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { api, Group } from '@/lib/api';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -11,6 +11,7 @@ export default function MessagesPage() {
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+    const searchTimeout = useRef<NodeJS.Timeout>(undefined);
 
     // Fetch groups for selector
     const fetchGroups = useCallback(async (search: string = ''): Promise<void> => {
@@ -36,7 +37,10 @@ export default function MessagesPage() {
 
     // Debounced search handler
     const handleSearchChange = useCallback((search: string): void => {
-        setTimeout(() => {
+        if (searchTimeout.current) {
+            clearTimeout(searchTimeout.current);
+        }
+        searchTimeout.current = setTimeout(() => {
             fetchGroups(search);
         }, 300);
     }, [fetchGroups]);

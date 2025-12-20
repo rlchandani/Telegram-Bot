@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 import { useAuth } from './AuthProvider';
 
@@ -17,10 +17,11 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps): React.ReactElement | null {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loading && !user) {
-            router.replace('/login');
+            router.push(`/login?returnUrl=${encodeURIComponent(pathname)}`);
         }
     }, [user, loading, router]);
 
