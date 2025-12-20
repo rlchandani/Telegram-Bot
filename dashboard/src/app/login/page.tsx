@@ -39,62 +39,60 @@ function LoginForm() {
 
     return (
         <div className="w-full max-w-md">
-            <div className="bg-white dark:bg-slate-800/50 border border-gray-400 dark:border-slate-600 rounded-3xl p-8">
-                <div className="text-center mb-8">
-                    <p className="text-gray-500 dark:text-slate-400 text-sm">
-                        Sign in to admin dashboard
-                    </p>
-                </div>
-
+            <div className="w-full max-w-md p-6 bg-white dark:bg-slate-800/50 shadow-xl border border-gray-400 dark:border-slate-600 rounded-3xl">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="login-email" className="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">
-                            Email
-                        </label>
-                        <input
-                            id="login-email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="input"
-                            placeholder="admin@example.com"
-                            required
-                            aria-describedby={error ? 'login-error' : undefined}
-                        />
+                    <div className="text-center mb-8">
+                        <p className="text-gray-500 dark:text-slate-400 text-sm">
+                            Sign in to admin dashboard
+                        </p>
                     </div>
-
-                    <div>
-                        <label htmlFor="login-password" className="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">
-                            Password
-                        </label>
-                        <input
-                            id="login-password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="input"
-                            placeholder="••••••••"
-                            required
-                            aria-describedby={error ? 'login-error' : undefined}
-                        />
-                    </div>
-
                     {error && (
-                        <div
-                            id="login-error"
-                            role="alert"
-                            className="text-red-500 text-sm text-center p-3 bg-red-500/10 rounded-lg border border-red-500/20"
-                        >
+                        <div className="px-4 py-3 rounded-xl text-sm bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/30">
                             {error}
                         </div>
                     )}
+                    <div>
+                        <label
+                            htmlFor="email"
+                            className="block text-sm font-medium mb-2 text-gray-500 dark:text-slate-400"
+                        >
+                            Email
+                        </label>
+                        <input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="admin@example.com"
+                            required
+                            className="w-full px-4 py-3 bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-gray-400 dark:focus:border-slate-500 focus:outline-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="password"
+                            className="block text-sm font-medium mb-2 text-gray-500 dark:text-slate-400"
+                        >
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                            className="w-full px-4 py-3 bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-gray-400 dark:focus:border-slate-500 focus:outline-none"
+                        />
+                    </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="btn btn-primary w-full mt-6"
+                        className="w-full px-6 py-3 rounded-xl font-medium bg-green-500 text-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
             </div>

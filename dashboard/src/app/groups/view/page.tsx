@@ -22,7 +22,7 @@ function GroupContent(): React.ReactElement {
     const [history, setHistory] = useState<CommandLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [historyLoading, setHistoryLoading] = useState(true);
-    const [updating, setUpdating] = useState(false);
+
     const [error, setError] = useState('');
 
     const fetchGroup = useCallback(async () => {
@@ -56,18 +56,7 @@ function GroupContent(): React.ReactElement {
         }
     }, [user, chatId, fetchGroup, fetchHistory]);
 
-    const handleToggleBlock = async (): Promise<void> => {
-        if (!group) return;
-        setUpdating(true);
-        try {
-            const updated = await api.updateGroup(chatId, { isBlocked: !group.isBlocked });
-            setGroup(updated);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update group');
-        } finally {
-            setUpdating(false);
-        }
-    };
+
 
 
     if (loading) {
@@ -140,18 +129,7 @@ function GroupContent(): React.ReactElement {
                     </div>
                 )}
 
-                {/* Restrict Button */}
-                <button
-                    type="button"
-                    onClick={handleToggleBlock}
-                    disabled={updating}
-                    className={`w-full py-3 rounded-full font-medium transition-all ${group.isBlocked
-                        ? 'bg-green-500 text-black hover:bg-green-400'
-                        : 'bg-red-500 text-white hover:bg-red-400'
-                        }`}
-                >
-                    {updating ? 'Updating...' : group.isBlocked ? 'Unblock Group' : 'Restrict Group'}
-                </button>
+
             </div>
 
             {/* Stats Section */}

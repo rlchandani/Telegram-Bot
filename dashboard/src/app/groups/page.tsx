@@ -6,7 +6,7 @@ import { api, Group } from '@/lib/api';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 import { GroupsTable } from '@/components/GroupsTable';
-import { StatsCard } from '@/components/StatsCard';
+import { StatisticCard } from '@/components/StatisticCard';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'blocked';
 
@@ -78,17 +78,17 @@ export default function GroupsPage() {
             <div className="min-h-screen p-4 md:p-8">
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
-                    <StatsCard
-                        title="Total Users"
+                <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible gap-4 mb-6 sm:mb-8 pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+                    <StatisticCard
+                        label="Total Users"
                         value={stats?.totalUsers ?? 0}
                     />
-                    <StatsCard
-                        title="Active Groups"
+                    <StatisticCard
+                        label="Active Groups"
                         value={stats?.activeGroups ?? 0}
                     />
-                    <StatsCard
-                        title="Commands Today"
+                    <StatisticCard
+                        label="Commands"
                         value={stats?.commandsToday ?? 0}
                     />
                 </div>

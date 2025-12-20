@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import { useAuth } from './AuthProvider';
@@ -100,14 +101,11 @@ export function Header(): React.ReactElement {
                                 <button
                                     type="button"
                                     onClick={logout}
-                                    className="btn btn-secondary text-sm flex items-center gap-2 px-3 sm:px-4"
+                                    className="p-2 rounded-xl bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-500"
                                     title="Logout"
                                     aria-label="Logout"
                                 >
-                                    <span className="hidden sm:inline">Logout</span>
-                                    <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
+                                    <LogOut size={18} />
                                 </button>
                             )}
                         </div>
