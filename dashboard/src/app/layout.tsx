@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "iRedlof Telegram Bot - Admin",
   description: "Admin dashboard for iRedlof Telegram Bot",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

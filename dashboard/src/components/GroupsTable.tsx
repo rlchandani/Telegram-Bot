@@ -1,10 +1,10 @@
-'use client';
-
-import Link from 'next/link';
-import { Group, api } from '@/lib/api';
 import { useState } from 'react';
-import { ConfirmDialog } from './ConfirmDialog';
+import Link from 'next/link';
+import { History as HistoryIcon, Ban, CircleCheck, Trash2 } from 'lucide-react';
+
+import { Group, api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface GroupsTableProps {
     groups: Group[];
@@ -101,9 +101,7 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                             className="flex flex-col items-center text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                             title="View History"
                                         >
-                                            <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
+                                            <HistoryIcon className="w-5 h-5 mb-1" />
                                             <span className="text-[10px]">History</span>
                                         </Link>
 
@@ -128,13 +126,11 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                                 : 'text-yellow-500 hover:text-yellow-400'
                                                 }`}
                                         >
-                                            <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                {group.isBlocked ? (
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                ) : (
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                                )}
-                                            </svg>
+                                            {group.isBlocked ? (
+                                                <CircleCheck className="w-5 h-5 mb-1" />
+                                            ) : (
+                                                <Ban className="w-5 h-5 mb-1" />
+                                            )}
                                             <span className="text-[10px]">
                                                 {group.isBlocked ? 'Unblock' : 'Block'}
                                             </span>
@@ -156,9 +152,7 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                             type="button"
                                             className="flex flex-col items-center text-red-500 hover:text-red-600 transition-colors"
                                         >
-                                            <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
+                                            <Trash2 className="w-5 h-5 mb-1" />
                                             <span className="text-[10px]">Delete</span>
                                         </button>
                                     </div>
@@ -221,9 +215,7 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                 href={`/groups/view?id=${group.chatId ?? group.id}`}
                                 className="flex-1 py-2 flex items-center justify-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <HistoryIcon className="w-4 h-4" />
                                 History
                             </Link>
 
@@ -243,13 +235,11 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                     : 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
                                     }`}
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    {group.isBlocked ? (
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    ) : (
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                    )}
-                                </svg>
+                                {group.isBlocked ? (
+                                    <CircleCheck className="w-4 h-4" />
+                                ) : (
+                                    <Ban className="w-4 h-4" />
+                                )}
                                 {group.isBlocked ? 'Unblock' : 'Block'}
                             </button>
 
@@ -266,9 +256,7 @@ export function GroupsTable({ groups, onGroupUpdated }: GroupsTableProps) {
                                 }}
                                 className="w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-900/20 rounded-lg text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <Trash2 className="w-5 h-5" />
                             </button>
                         </div>
                     </div>

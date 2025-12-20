@@ -75,10 +75,10 @@ export default function GroupsPage() {
 
     return (
         <AuthGuard>
-            <div className="min-h-screen p-4 md:p-8">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
 
                 {/* Stats Cards */}
-                <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible gap-4 mb-6 sm:mb-8 pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-2 mb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3">
                     <StatisticCard
                         label="Total Users"
                         value={stats?.totalUsers ?? 0}

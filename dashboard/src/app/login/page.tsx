@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -42,6 +43,16 @@ function LoginForm() {
             <div className="w-full max-w-md p-6 bg-white dark:bg-slate-800/50 shadow-xl border border-gray-400 dark:border-slate-600 rounded-3xl">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="text-center mb-8">
+                        <div className="flex justify-center mb-4">
+                            <Image
+                                src="/logo.png"
+                                alt="iRedlof Telegram Bot"
+                                width={48}
+                                height={48}
+                                className="h-12 w-auto"
+                                priority
+                            />
+                        </div>
                         <p className="text-gray-500 dark:text-slate-400 text-sm">
                             Sign in to admin dashboard
                         </p>
