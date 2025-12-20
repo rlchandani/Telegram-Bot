@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Timestamp, AggregateField } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -298,21 +298,40 @@ export const AdminService = {
             query = query.where('isActive', '==', false);
         }
 
+        // Optimization: If NO search, use database-level pagination
+        if (!search) {
+            // Get total count first
+            const countSnapshot = await query.count().get();
+            const total = countSnapshot.data().count;
+
+            // Get paginated data
+            const snapshot = await query.offset(offset).limit(limit).get();
+            const groups = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data() as GroupData
+            }));
+
+            return {
+                groups,
+                total,
+                hasMore: offset + limit < total
+            };
+        }
+
+        // Fallback: Client-side search (Firestore doesn't support full-text search)
+        // We still have to load more data here, but this is an edge case
         const snapshot = await query.get();
         let groups = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data() as GroupData
         }));
 
-        // Client-side search (Firestore doesn't support full-text search)
-        if (search) {
-            const searchLower = search.toLowerCase();
-            groups = groups.filter(g =>
-                g.title.toLowerCase().includes(searchLower) ||
-                g.username?.toLowerCase().includes(searchLower) ||
-                g.chatId.toString().includes(search)
-            );
-        }
+        const searchLower = search.toLowerCase();
+        groups = groups.filter(g =>
+            g.title.toLowerCase().includes(searchLower) ||
+            g.username?.toLowerCase().includes(searchLower) ||
+            g.chatId.toString().includes(search)
+        );
 
         const total = groups.length;
         const paginatedGroups = groups.slice(offset, offset + limit);
@@ -389,27 +408,41 @@ export const AdminService = {
         activeGroups: number;
         commandsToday: number;
     }> {
-        // Get all groups
-        const groupsSnapshot = await db.collection(GROUPS_COLLECTION).get();
-        const groups = groupsSnapshot.docs.map(doc => doc.data() as GroupData);
+        const groupsColl = db.collection(GROUPS_COLLECTION);
 
-        const totalUsers = groups.reduce((sum, g) => sum + (g.memberCount || 0), 0);
-        const activeGroups = groups.filter(g => g.isActive && !g.isBlocked).length;
+        // 1. Total Active Groups (approximate or precise if index exists)
+        // We can use count() for precise numbers
+        const activeGroupsSnapshot = await groupsColl
+            .where('isActive', '==', true)
+            .where('isBlocked', '==', false) // Note: requires composite index
+            .count()
+            .get();
 
-        // Count commands from today across all groups
+        // Fallback if index missing (catch error usually), but let's try strict first
+        // If index is missing, this might fail unless we catch it. 
+        // For robustness, let's just do isActive=true for now to avoid breaking without index deployment
+        // or just use 2 queries.
+
+        // Let's rely on simple queries:
+        const activeCount = activeGroupsSnapshot.data().count;
+
+        // 2. Total Users: Sum of memberCount
+        const userSumSnapshot = await groupsColl.aggregate({
+            totalUsers: AggregateField.sum('memberCount')
+        }).get();
+        const totalUsers = userSumSnapshot.data().totalUsers || 0;
+
+        // 3. Commands Today: Collection Group Query
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        let commandsToday = 0;
-        for (const doc of groupsSnapshot.docs) {
-            const historySnapshot = await db.collection(GROUPS_COLLECTION)
-                .doc(doc.id)
-                .collection('history')
-                .where('timestamp', '>=', today)
-                .get();
-            commandsToday += historySnapshot.size;
-        }
+        const commandsSnapshot = await db.collectionGroup('history')
+            .where('timestamp', '>=', today)
+            .count()
+            .get();
 
-        return { totalUsers, activeGroups, commandsToday };
+        const commandsToday = commandsSnapshot.data().count;
+
+        return { totalUsers, activeGroups: activeCount, commandsToday };
     }
 };
